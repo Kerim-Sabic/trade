@@ -1,0 +1,32 @@
+# Prometheus configuration for CryptoAI Trading System
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files: []
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # CryptoAI Trading Service
+  - job_name: 'cryptoai-trading'
+    static_configs:
+      - targets: ['trading-ai:8080']
+    metrics_path: '/api/prometheus'
+    scrape_interval: 10s
+
+  # CryptoAI Dashboard
+  - job_name: 'cryptoai-dashboard'
+    static_configs:
+      - targets: ['trading-ai:8081']
+    metrics_path: '/api/prometheus'
+    scrape_interval: 10s
