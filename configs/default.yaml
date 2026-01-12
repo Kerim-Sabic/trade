@@ -1,0 +1,393 @@
+# CryptoAI Default Configuration
+# Autonomous Crypto-Native AI Trading Intelligence
+
+system:
+  name: "CryptoAI"
+  version: "0.1.0"
+  environment: "development"  # development, staging, production
+  seed: 42
+  device: "cuda"  # cuda, cpu, auto
+  precision: "amp"  # fp32, fp16, bf16, amp
+  num_workers: 8
+  log_level: "INFO"
+
+# Hardware Configuration (2x RTX 5080, 128GB RAM, Ryzen 9 7950X)
+hardware:
+  gpus: [0, 1]
+  gpu_memory_fraction: 0.9
+  cpu_threads: 32
+  ram_limit_gb: 120
+  use_ddp: true
+  use_amp: true
+
+# Data Universe Configuration
+data_universe:
+  # Market Microstructure
+  market_microstructure:
+    enabled: true
+    tick_buffer_size: 100000
+    orderbook_depth: 20
+    snapshot_interval_ms: 100
+    features:
+      - spread
+      - depth_imbalance
+      - cancellation_rate
+      - aggressor_side
+      - liquidity_elasticity
+      - volume_profile
+
+  # Derivatives Intelligence
+  derivatives:
+    enabled: true
+    update_interval_s: 1
+    exchanges: ["binance", "okx", "bybit"]
+    features:
+      - funding_rate
+      - open_interest
+      - liquidations
+      - long_short_ratio
+      - basis
+      - contango_backwardation
+
+  # On-Chain Intelligence
+  onchain:
+    enabled: true
+    update_interval_s: 60
+    chains: ["ethereum", "bitcoin", "arbitrum", "optimism"]
+    features:
+      - exchange_flows
+      - whale_activity
+      - stablecoin_flows
+      - gas_fees
+      - mempool_congestion
+      - bridge_activity
+
+  # Event & Narrative Data
+  events:
+    enabled: true
+    sources:
+      - exchange_announcements
+      - protocol_upgrades
+      - security_incidents
+      - regulatory_news
+      - github_activity
+    verified_accounts_only: true
+    credibility_threshold: 0.7
+
+# Asset-Specific Configuration
+assets:
+  universe: ["BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "AVAX", "DOGE", "LINK", "DOT"]
+  embedding_dim: 64
+  cross_asset_graph: true
+  dominance_conditioning: true
+  min_liquidity_usd: 1000000
+  min_history_days: 90
+
+# State Encoder Configuration
+encoders:
+  order_flow:
+    type: "transformer"
+    hidden_dim: 256
+    num_layers: 4
+    num_heads: 8
+    sequence_length: 100
+    dropout: 0.1
+
+  liquidity:
+    type: "cnn"
+    channels: [32, 64, 128]
+    kernel_sizes: [3, 5, 7]
+    output_dim: 128
+
+  derivatives:
+    type: "lstm"
+    hidden_dim: 128
+    num_layers: 2
+    bidirectional: true
+
+  onchain:
+    type: "transformer"
+    hidden_dim: 128
+    num_layers: 2
+    num_heads: 4
+
+  events:
+    type: "crypto_bert"
+    pretrained: "finbert-crypto"
+    hidden_dim: 256
+    max_length: 512
+    freeze_base: false
+
+  asset:
+    embedding_dim: 64
+    learnable: true
+
+  regime:
+    hidden_dim: 64
+    num_regimes: 5  # trending_up, trending_down, ranging, volatile, crisis
+
+# World Model Configuration
+world_model:
+  enabled: true
+  type: "temporal_transformer"
+  latent_dim: 256
+  hidden_dim: 512
+  num_layers: 6
+  num_heads: 8
+  sequence_length: 100
+  prediction_horizons: [1, 5, 15, 60]  # minutes
+  stochastic_latent: true
+  num_latent_samples: 5
+  causal_discovery: true
+
+# Decision Engine Configuration (Hierarchical RL)
+decision_engine:
+  # Meta Controller (Level 1)
+  meta_controller:
+    type: "ppo"
+    hidden_dim: 256
+    num_layers: 3
+    update_frequency: 60  # minutes
+    outputs:
+      - regime_classification
+      - aggressiveness_level  # 0-1
+      - strategy_weights
+
+  # Policy Network (Level 2)
+  policy:
+    type: "sac"  # sac, ppo, td3
+    hidden_dim: 512
+    num_layers: 4
+    action_space:
+      direction: "continuous"  # -1 to 1
+      position_size: "continuous"  # 0 to 1
+      leverage: "continuous"  # 1 to max_leverage
+      urgency: "continuous"  # 0 to 1
+
+  # Reward Configuration
+  reward:
+    pnl_weight: 1.0
+    fee_penalty: 1.0
+    slippage_penalty: 1.5
+    drawdown_penalty: 2.0
+    liquidation_penalty: 10.0
+    tail_risk_penalty: 3.0
+    instability_penalty: 1.0
+    sharpe_bonus: 0.5
+
+# Black Swan Intelligence Layer
+black_swan:
+  enabled: true
+  models:
+    - type: "variational_temporal"
+      latent_dim: 64
+    - type: "isolation_forest"
+      contamination: 0.01
+    - type: "evt_tail"
+      threshold_quantile: 0.95
+
+  detection_targets:
+    crash_probability:
+      horizons: [60, 360]  # minutes
+      threshold: 0.3
+    liquidity_freeze:
+      depth_threshold: 0.3
+      threshold: 0.4
+    liquidation_cascade:
+      oi_change_threshold: -0.1
+      threshold: 0.35
+    regime_break:
+      threshold: 0.5
+
+  # This layer NEVER trades, only controls risk
+  risk_override_authority: true
+
+# Risk Engine Configuration
+risk_engine:
+  # Position Limits
+  max_position_pct: 0.2  # of capital
+  max_leverage: 5.0
+  max_drawdown_pct: 0.15
+  daily_loss_limit_pct: 0.05
+
+  # Dynamic Controls
+  volatility_scaling:
+    enabled: true
+    target_volatility: 0.15
+    lookback_days: 20
+
+  event_aware_leverage:
+    enabled: true
+    reduction_factor: 0.5
+
+  liquidity_aware_sizing:
+    enabled: true
+    impact_threshold: 0.001
+
+  # Emergency Behavior
+  kill_switch:
+    enabled: true
+    triggers:
+      - max_drawdown_exceeded
+      - daily_loss_exceeded
+      - black_swan_alert
+      - exchange_connectivity_lost
+    actions:
+      - flatten_all_positions
+      - suspend_trading
+      - alert_operators
+
+  maker_only_mode:
+    trigger_volatility: 0.5
+    enabled: true
+
+# Backtesting Configuration
+backtesting:
+  engine: "event_driven"
+
+  # Realistic Simulation
+  fees:
+    maker: 0.0002
+    taker: 0.0005
+
+  slippage:
+    model: "orderbook_depth"
+    impact_coefficient: 0.0001
+
+  latency:
+    order_submission_ms: 50
+    market_data_ms: 20
+
+  funding:
+    enabled: true
+    interval_hours: 8
+
+  partial_fills:
+    enabled: true
+    fill_probability: 0.85
+
+  liquidation:
+    enabled: true
+    maintenance_margin: 0.05
+
+  # Validation Rules
+  validation:
+    no_lookahead: true
+    strict_walk_forward: true
+    min_test_window_days: 90
+
+  # Historical Crisis Testing
+  stress_tests:
+    - name: "luna_crash"
+      start: "2022-05-01"
+      end: "2022-05-15"
+    - name: "ftx_collapse"
+      start: "2022-11-01"
+      end: "2022-11-15"
+    - name: "covid_crash"
+      start: "2020-03-01"
+      end: "2020-03-31"
+    - name: "china_ban"
+      start: "2021-05-15"
+      end: "2021-05-25"
+
+  # Metrics
+  metrics:
+    - sharpe_ratio
+    - sortino_ratio
+    - max_drawdown
+    - calmar_ratio
+    - cvar_95
+    - time_to_recovery
+    - capital_survival_rate
+    - win_rate
+    - profit_factor
+
+# Training Configuration
+training:
+  # Offline Training
+  offline:
+    batch_size: 256
+    learning_rate: 0.0001
+    weight_decay: 0.01
+    epochs: 100
+    warmup_steps: 1000
+    gradient_clip: 1.0
+
+  # Online Adaptation
+  online:
+    enabled: true
+    update_frequency: 3600  # seconds
+    replay_buffer_size: 1000000
+    replay_decay: 0.999
+    min_samples: 10000
+
+  # Drift Detection
+  drift_detection:
+    enabled: true
+    methods:
+      - state_distribution_shift
+      - event_impact_decay
+      - policy_degradation
+    threshold: 0.1
+    action: "reduce_exposure"
+
+  # Self-Regulation
+  self_regulation:
+    alpha_decay_detection: true
+    alpha_decay_threshold: 0.3
+    uncertainty_exposure_reduction: true
+
+# Execution Configuration
+execution:
+  exchanges:
+    - name: "binance"
+      api_type: "rest+ws"
+      rate_limit: 1200
+    - name: "okx"
+      api_type: "rest+ws"
+      rate_limit: 600
+    - name: "bybit"
+      api_type: "rest+ws"
+      rate_limit: 600
+
+  smart_routing:
+    enabled: true
+    optimize_for: "execution_quality"  # execution_quality, speed, cost
+
+  shadow_execution:
+    enabled: true
+    duration_days: 14
+
+# Monitoring Configuration
+monitoring:
+  dashboard:
+    enabled: true
+    port: 8080
+
+  metrics:
+    prometheus:
+      enabled: true
+      port: 9090
+
+  alerts:
+    enabled: true
+    channels: ["slack", "email"]
+    thresholds:
+      drawdown: 0.1
+      daily_loss: 0.03
+      black_swan_prob: 0.3
+
+  logging:
+    level: "INFO"
+    structured: true
+    rotation: "1 day"
+    retention: "30 days"
+
+# Reproducibility
+reproducibility:
+  seed_everything: true
+  deterministic_algorithms: true
+  log_all_hyperparameters: true
+  checkpoint_frequency: 3600  # seconds
+  version_control: true
