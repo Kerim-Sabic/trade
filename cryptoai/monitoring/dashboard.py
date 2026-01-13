@@ -1,5 +1,6 @@
 """Dashboard server for monitoring the trading AI system."""
 
+import asyncio
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 from datetime import datetime

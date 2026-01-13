@@ -5,6 +5,7 @@ from cryptoai.execution.exchange_client import (
     OrderRequest,
     OrderResult,
     ExchangeType,
+    create_exchange_client,
 )
 from cryptoai.execution.executor import TradingExecutor, ExecutionConfig
 from cryptoai.execution.order_manager import OrderManager, OrderState
@@ -18,4 +19,5 @@ __all__ = [
     "ExecutionConfig",
     "OrderManager",
     "OrderState",
+    "create_exchange_client",
 ]

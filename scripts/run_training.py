@@ -25,7 +25,7 @@ from cryptoai.utils.logging import setup_logging
 
 def train_worker(rank: int, world_size: int, ddp_config: DDPConfig, **kwargs):
     """Training worker function."""
-    config = kwargs.get("config", {})
+    config = kwargs.get("training_config", {})
     data_config = kwargs.get("data_config")
 
     # Setup logging for this rank
@@ -126,7 +126,7 @@ def main():
         train_worker,
         world_size=world_size,
         config=ddp_config,
-        config=config,
+        training_config=config,
         data_config=data_config,
     )
 
