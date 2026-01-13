@@ -62,6 +62,7 @@ dependencies = [
     "optuna>=3.5.0",
     "plotly>=5.18.0",
     "matplotlib>=3.8.0",
+    "h5py>=3.10.0",
 ]
 
 [project.optional-dependencies]
@@ -81,7 +82,7 @@ dev = [
 ]
 
 [project.scripts]
-cryptoai = "cryptoai.cli:app"
+cryptoai = "cryptoai.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

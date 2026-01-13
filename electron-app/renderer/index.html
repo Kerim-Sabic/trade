@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+  <title>CryptoAI Desktop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">AI</span>
+        <span class="logo-text">CryptoAI</span>
+      </div>
+      <div class="header-actions">
+        <button id="settings-btn" class="btn btn-icon" title="Settings">
+          <span class="icon">&#9881;</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Status Panel -->
+      <section class="panel status-panel">
+        <h2>System Status</h2>
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-label">Status</span>
+            <span id="status-indicator" class="status-value status-stopped">Stopped</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Mode</span>
+            <span id="current-mode" class="status-value">Shadow</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Assets</span>
+            <span id="current-assets" class="status-value">BTCUSDT</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controls Panel -->
+      <section class="panel controls-panel">
+        <h2>Trading Controls</h2>
+        <div class="controls-form">
+          <div class="form-group">
+            <label for="mode-select">Mode</label>
+            <select id="mode-select" class="form-control">
+              <option value="shadow">Shadow (Simulation)</option>
+              <option value="paper">Paper Trading</option>
+              <option value="backtest">Backtest</option>
+              <option value="live">Live Trading</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="assets-input">Assets (comma-separated)</label>
+            <input type="text" id="assets-input" class="form-control" value="BTCUSDT" placeholder="BTCUSDT, ETHUSDT">
+          </div>
+          <div class="form-group">
+            <label>Config File</label>
+            <div class="file-input">
+              <input type="text" id="config-path" class="form-control" readonly placeholder="configs/default.yaml">
+              <button id="browse-config" class="btn btn-secondary">Browse</button>
+            </div>
+          </div>
+        </div>
+        <div class="controls-actions">
+          <button id="start-btn" class="btn btn-primary btn-large">
+            <span class="icon">&#9658;</span> Start Trading
+          </button>
+          <button id="stop-btn" class="btn btn-danger btn-large" disabled>
+            <span class="icon">&#9632;</span> Stop Trading
+          </button>
+        </div>
+      </section>
+
+      <!-- Logs Panel -->
+      <section class="panel logs-panel">
+        <div class="panel-header">
+          <h2>Logs</h2>
+          <button id="clear-logs" class="btn btn-sm btn-secondary">Clear</button>
+        </div>
+        <div id="logs-container" class="logs-container">
+          <div class="log-entry log-info">
+            <span class="log-time">[System]</span>
+            <span class="log-message">CryptoAI Desktop ready. Configure and start trading.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button id="close-settings" class="btn btn-icon">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="python-path">Python Executable</label>
+            <div class="file-input">
+              <input type="text" id="python-path" class="form-control" placeholder="python">
+              <button id="browse-python" class="btn btn-secondary">Browse</button>
+            </div>
+            <small class="form-hint">Path to Python 3.10+ interpreter with cryptoai installed</small>
+          </div>
+          <div class="form-group">
+            <label for="default-config">Default Config Path</label>
+            <input type="text" id="default-config" class="form-control" placeholder="configs/default.yaml">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="save-settings" class="btn btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

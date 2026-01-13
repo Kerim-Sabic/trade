@@ -140,7 +140,8 @@ class GradScaler:
         self.enabled = enabled and precision in ("fp16", "amp")
 
         if self.enabled:
-            self._scaler = torch.amp.GradScaler()
+            # Use cuda.amp.GradScaler for compatibility
+            self._scaler = torch.cuda.amp.GradScaler()
         else:
             self._scaler = None
 
