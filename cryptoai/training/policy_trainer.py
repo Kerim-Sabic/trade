@@ -6,8 +6,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast
 from loguru import logger
+
+# Handle PyTorch 2.0+ autocast API
+try:
+    from torch.amp import autocast as _autocast
+    def autocast(enabled=True):
+        return _autocast(device_type="cuda", enabled=enabled)
+except ImportError:
+    from torch.cuda.amp import autocast
 
 from cryptoai.training.ddp import DDPTrainer, DDPConfig, is_main_process, reduce_tensor
 from cryptoai.training.experience_replay import (

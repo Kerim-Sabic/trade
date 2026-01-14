@@ -98,9 +98,18 @@ def train(
     ),
 ):
     """Run distributed training."""
+    import os
     import torch
     from cryptoai.utils.logging import setup_logging
     from cryptoai.utils.config import load_config
+    from cryptoai.training import UnifiedTrainer
+    from cryptoai.training.ddp import DDPConfig, launch_distributed
+    from cryptoai.training.trainer import TrainingConfig
+    from cryptoai.training.data_loader import (
+        MarketDataLoader,
+        DataConfig,
+        create_synthetic_data,
+    )
 
     setup_logging(level="INFO")
 
@@ -114,24 +123,68 @@ def train(
         console.print("[yellow]Warning: CUDA not available, using CPU[/yellow]")
         gpus = 0
 
-    # Import and run training
-    from scripts.run_training import main as train_main
+    # Load configuration
+    cfg = load_config(config)
 
-    # Build sys.argv for training script
-    old_argv = sys.argv
-    sys.argv = [
-        "run_training.py",
-        "--config", config,
-        "--data-dir", data_dir,
-        "--gpus", str(gpus),
-    ]
+    # Generate synthetic data if requested
     if synthetic:
-        sys.argv.append("--synthetic")
+        console.print("[cyan]Generating synthetic training data...[/cyan]")
+        os.makedirs(data_dir, exist_ok=True)
+        create_synthetic_data(
+            os.path.join(data_dir, "train.h5"),
+            n_samples=10000,
+        )
+        create_synthetic_data(
+            os.path.join(data_dir, "val.h5"),
+            n_samples=2000,
+        )
 
-    try:
-        train_main()
-    finally:
-        sys.argv = old_argv
+    # Data configuration
+    data_config = DataConfig(
+        data_dir=data_dir,
+        train_files=[os.path.join(data_dir, "train.h5")],
+        val_files=[os.path.join(data_dir, "val.h5")],
+        batch_size=cfg.get("training", {}).get("batch_size", 64),
+    )
+
+    # DDP configuration
+    world_size = min(gpus, torch.cuda.device_count()) if gpus > 0 and torch.cuda.is_available() else 1
+
+    def train_worker(rank: int, ws: int, ddp_config: DDPConfig, **kwargs):
+        """Training worker function."""
+        # Training configuration
+        training_config = TrainingConfig(
+            state_dim=cfg.get("model", {}).get("state_dim", 200),
+            action_dim=cfg.get("model", {}).get("action_dim", 4),
+            hidden_dim=cfg.get("model", {}).get("hidden_dim", 256),
+            latent_dim=cfg.get("model", {}).get("latent_dim", 128),
+            batch_size=cfg.get("training", {}).get("batch_size", 64),
+            encoder_pretrain_epochs=cfg.get("training", {}).get("encoder_epochs", 10),
+            world_model_epochs=cfg.get("training", {}).get("world_model_epochs", 50),
+            policy_epochs=cfg.get("training", {}).get("policy_epochs", 100),
+        )
+
+        trainer = UnifiedTrainer(training_config, ddp_config, rank)
+        data_loader = MarketDataLoader(kwargs["data_config"])
+        train_loader = data_loader.create_train_loader(rank, ws)
+        val_loader = data_loader.create_val_loader(rank, ws)
+
+        logger.info(f"Rank {rank}: Starting full training pipeline")
+        history = trainer.full_training(train_loader, val_loader)
+
+        if rank == 0:
+            logger.info(f"Training complete. History keys: {list(history.keys())}")
+
+    ddp_config = DDPConfig(world_size=world_size)
+
+    console.print(f"[cyan]Starting distributed training on {world_size} GPU(s)[/cyan]")
+
+    launch_distributed(
+        train_worker,
+        world_size=world_size,
+        config=ddp_config,
+        data_config=data_config,
+    )
 
 
 @app.command()
