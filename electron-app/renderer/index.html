@@ -11,12 +11,22 @@
   <div id="app">
     <!-- Header -->
     <header class="header">
-      <div class="logo">
-        <span class="logo-icon">AI</span>
-        <span class="logo-text">CryptoAI</span>
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">AI</span>
+          <span class="logo-text">CryptoAI</span>
+        </div>
+        <div class="governance-badge" id="governance-badge">
+          <span class="badge-dot"></span>
+          <span class="badge-text">OPERATIONAL</span>
+        </div>
       </div>
-      <div class="header-actions">
-        <button id="settings-btn" class="btn btn-icon" title="Settings">
+      <div class="header-right">
+        <button id="emergency-stop-btn" class="btn btn-emergency" title="Emergency Kill Switch (Ctrl+Shift+K)">
+          <span class="emergency-icon">&#9632;</span>
+          <span>EMERGENCY STOP</span>
+        </button>
+        <button id="settings-btn" class="btn btn-icon" title="Settings (Ctrl+,)">
           <span class="icon">&#9881;</span>
         </button>
       </div>
@@ -24,98 +34,216 @@
 
     <!-- Main Content -->
     <main class="main">
-      <!-- Status Panel -->
-      <section class="panel status-panel">
-        <h2>System Status</h2>
-        <div class="status-grid">
-          <div class="status-item">
-            <span class="status-label">Status</span>
-            <span id="status-indicator" class="status-value status-stopped">Stopped</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Mode</span>
-            <span id="current-mode" class="status-value">Shadow</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Assets</span>
-            <span id="current-assets" class="status-value">BTCUSDT</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Controls Panel -->
-      <section class="panel controls-panel">
-        <h2>Trading Controls</h2>
-        <div class="controls-form">
-          <div class="form-group">
-            <label for="mode-select">Mode</label>
-            <select id="mode-select" class="form-control">
-              <option value="shadow">Shadow (Simulation)</option>
-              <option value="paper">Paper Trading</option>
-              <option value="backtest">Backtest</option>
-              <option value="live">Live Trading</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="assets-input">Assets (comma-separated)</label>
-            <input type="text" id="assets-input" class="form-control" value="BTCUSDT" placeholder="BTCUSDT, ETHUSDT">
-          </div>
-          <div class="form-group">
-            <label>Config File</label>
-            <div class="file-input">
-              <input type="text" id="config-path" class="form-control" readonly placeholder="configs/default.yaml">
-              <button id="browse-config" class="btn btn-secondary">Browse</button>
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Status Panel -->
+        <section class="panel status-panel">
+          <h2>System Status</h2>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Status</span>
+              <span id="status-indicator" class="status-value status-stopped">
+                <span class="status-dot"></span>
+                Stopped
+              </span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Mode</span>
+              <span id="current-mode" class="status-value mode-shadow">Shadow</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Exchange</span>
+              <span id="current-exchange" class="status-value">Binance</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Assets</span>
+              <span id="current-assets" class="status-value">BTCUSDT</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Uptime</span>
+              <span id="uptime" class="status-value">--:--:--</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Governance</span>
+              <span id="governance-state" class="status-value governance-operational">Operational</span>
             </div>
           </div>
-        </div>
-        <div class="controls-actions">
-          <button id="start-btn" class="btn btn-primary btn-large">
-            <span class="icon">&#9658;</span> Start Trading
-          </button>
-          <button id="stop-btn" class="btn btn-danger btn-large" disabled>
-            <span class="icon">&#9632;</span> Stop Trading
-          </button>
-        </div>
-      </section>
+        </section>
 
-      <!-- Logs Panel -->
-      <section class="panel logs-panel">
-        <div class="panel-header">
-          <h2>Logs</h2>
-          <button id="clear-logs" class="btn btn-sm btn-secondary">Clear</button>
-        </div>
-        <div id="logs-container" class="logs-container">
-          <div class="log-entry log-info">
-            <span class="log-time">[System]</span>
-            <span class="log-message">CryptoAI Desktop ready. Configure and start trading.</span>
+        <!-- Controls Panel -->
+        <section class="panel controls-panel">
+          <h2>Trading Configuration</h2>
+          <div class="controls-form">
+            <!-- Mode Selection -->
+            <div class="form-group">
+              <label for="mode-select">Trading Mode</label>
+              <select id="mode-select" class="form-control">
+                <option value="shadow" selected>Shadow Mode (Simulation)</option>
+                <option value="paper">Paper Trading (Testnet)</option>
+                <option value="backtest">Backtest (Historical)</option>
+                <option value="live" class="live-option">Live Trading (REAL MONEY)</option>
+              </select>
+              <small id="mode-description" class="form-hint">
+                Simulates trading without any API calls. Zero risk.
+              </small>
+            </div>
+
+            <!-- Exchange Selection -->
+            <div class="form-group">
+              <label for="exchange-select">Exchange</label>
+              <select id="exchange-select" class="form-control">
+                <option value="binance" selected>Binance</option>
+                <option value="bybit">Bybit</option>
+                <option value="okx">OKX</option>
+              </select>
+            </div>
+
+            <!-- Assets -->
+            <div class="form-group">
+              <label for="assets-input">Trading Pairs</label>
+              <input type="text" id="assets-input" class="form-control" value="BTCUSDT" placeholder="BTCUSDT, ETHUSDT">
+              <small class="form-hint">Comma-separated list of trading pairs</small>
+            </div>
+
+            <!-- Config File -->
+            <div class="form-group">
+              <label>Configuration File</label>
+              <div class="file-input">
+                <input type="text" id="config-path" class="form-control" readonly placeholder="configs/default.yaml">
+                <button id="browse-config" class="btn btn-secondary">Browse</button>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+
+          <!-- Live Mode Warning -->
+          <div id="live-warning" class="warning-box hidden">
+            <div class="warning-icon">&#9888;</div>
+            <div class="warning-content">
+              <strong>Live Trading Warning</strong>
+              <p>You are about to trade with REAL money. Ensure you understand the risks.</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="controls-actions">
+            <button id="start-btn" class="btn btn-primary btn-large">
+              <span class="btn-icon">&#9658;</span>
+              <span>Start Trading</span>
+            </button>
+            <button id="stop-btn" class="btn btn-danger btn-large" disabled>
+              <span class="btn-icon">&#9632;</span>
+              <span>Stop Trading</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column - Logs -->
+      <div class="right-column">
+        <section class="panel logs-panel">
+          <div class="panel-header">
+            <h2>System Logs</h2>
+            <div class="logs-actions">
+              <label class="checkbox-label">
+                <input type="checkbox" id="auto-scroll" checked>
+                Auto-scroll
+              </label>
+              <button id="clear-logs" class="btn btn-sm btn-secondary">Clear</button>
+            </div>
+          </div>
+          <div id="logs-container" class="logs-container">
+            <div class="log-entry log-info">
+              <span class="log-time">[System]</span>
+              <span class="log-message">CryptoAI Desktop ready. Configure and start trading.</span>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">
+        <span id="platform-info">Platform: --</span>
+      </div>
+      <div class="footer-right">
+        <span id="connection-status" class="connection-offline">
+          <span class="connection-dot"></span>
+          Disconnected
+        </span>
+      </div>
+    </footer>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
       <div class="modal-content">
         <div class="modal-header">
           <h2>Settings</h2>
           <button id="close-settings" class="btn btn-icon">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label for="python-path">Python Executable</label>
-            <div class="file-input">
-              <input type="text" id="python-path" class="form-control" placeholder="python">
-              <button id="browse-python" class="btn btn-secondary">Browse</button>
+          <!-- Python Settings -->
+          <div class="settings-section">
+            <h3>Python Environment</h3>
+            <div class="form-group">
+              <label for="python-path">Python Executable</label>
+              <div class="file-input">
+                <input type="text" id="python-path" class="form-control" placeholder="python">
+                <button id="browse-python" class="btn btn-secondary">Browse</button>
+              </div>
+              <small class="form-hint">Path to Python 3.10+ with cryptoai package installed</small>
             </div>
-            <small class="form-hint">Path to Python 3.10+ interpreter with cryptoai installed</small>
           </div>
-          <div class="form-group">
-            <label for="default-config">Default Config Path</label>
-            <input type="text" id="default-config" class="form-control" placeholder="configs/default.yaml">
+
+          <!-- Safety Settings -->
+          <div class="settings-section">
+            <h3>Safety Settings</h3>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="confirm-live-mode" checked>
+                Require confirmation for live trading
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="max-leverage">Maximum Leverage</label>
+              <input type="number" id="max-leverage" class="form-control" value="3" min="1" max="20">
+            </div>
+            <div class="form-group">
+              <label for="max-drawdown">Maximum Drawdown (%)</label>
+              <input type="number" id="max-drawdown" class="form-control" value="10" min="1" max="50">
+            </div>
+          </div>
+
+          <!-- Default Config -->
+          <div class="settings-section">
+            <h3>Default Configuration</h3>
+            <div class="form-group">
+              <label for="default-config">Default Config File</label>
+              <input type="text" id="default-config" class="form-control" placeholder="configs/default.yaml">
+            </div>
           </div>
         </div>
         <div class="modal-footer">
+          <button id="cancel-settings" class="btn btn-secondary">Cancel</button>
           <button id="save-settings" class="btn btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h2 id="confirm-title">Confirm Action</h2>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-message">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="confirm-ok" class="btn btn-primary">Confirm</button>
         </div>
       </div>
     </div>
