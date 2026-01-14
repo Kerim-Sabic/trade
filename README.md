@@ -1,6 +1,14 @@
 # CryptoAI - Autonomous Crypto Trading Intelligence
 
-A production-grade autonomous crypto trading system using deep reinforcement learning, multi-source data aggregation, and sophisticated risk management.
+A production-grade autonomous crypto trading system using deep reinforcement learning, multi-source data aggregation, sophisticated risk management, and AI governance with self-improvement capabilities.
+
+## Key Features
+
+- **Adaptive Intelligence**: Multi-model ensemble with meta-learning that adapts to changing market conditions
+- **News & Black Swan Detection**: Real-time NLP processing with tail-risk forecasting
+- **AI Governance**: Self-improvement loop with strict safety boundaries and human oversight
+- **Professional Backtesting**: Event-driven engine with realistic market simulation
+- **Multi-layer Risk Management**: Kill-switches, position limits, and capital protection
 
 ## System Requirements
 
@@ -242,6 +250,20 @@ export CUDA_VISIBLE_DEVICES=0,1
 
 ```
 cryptoai/
+├── adaptive/          # TRUE Adaptive Intelligence System
+│   ├── __init__.py    # Multi-model ensemble with meta-learning
+│   └── validation.py  # Online validation and overfitting detection
+│
+├── news/              # News & Black Swan Awareness
+│   └── __init__.py    # NLP + tail-risk + shock detection
+│
+├── governance/        # AI Governance & Self-Improvement Loop
+│   └── __init__.py    # Safety boundaries, kill-switches, audit
+│
+├── backtesting/       # Professional Backtesting Engine
+│   ├── __init__.py    # Event-driven backtest with realistic simulation
+│   └── data_sources.py # Historical data management
+│
 ├── data_universe/     # Multi-source data aggregation
 │   ├── market_microstructure/  # L2 orderbook, trades
 │   ├── derivatives/   # Funding rates, open interest
@@ -271,10 +293,6 @@ cryptoai/
 ├── execution/         # Order management
 │   └── exchange_client.py  # Binance/OKX/Bybit
 │
-├── backtesting/       # Historical simulation
-│   ├── engine.py      # Event-driven backtest
-│   └── simulator.py   # Market friction model
-│
 ├── training/          # Distributed training
 │   ├── trainer.py     # Unified trainer
 │   └── ddp.py         # Multi-GPU support
@@ -282,6 +300,262 @@ cryptoai/
 └── monitoring/        # Observability
     ├── dashboard.py   # Web UI
     └── drift_detector.py  # Distribution shift
+```
+
+---
+
+## Adaptive Intelligence System
+
+The adaptive intelligence system (`cryptoai.adaptive`) implements a multi-model ensemble with meta-learning capabilities.
+
+### Key Components
+
+| Component | Purpose |
+|-----------|---------|
+| `PricePredictor` | Direction and magnitude prediction |
+| `VolatilityPredictor` | Volatility and tail-risk estimation |
+| `StructurePredictor` | Liquidity and market structure |
+| `RegimeDetector` | Bull/bear/trending/ranging detection |
+| `MetaController` | Dynamic model weighting |
+| `SafetyController` | Risk-off triggers and validation |
+
+### Model Trust Logic
+
+Models are trusted or ignored based on market conditions:
+
+```
+Price Predictor:
+  TRUSTED when:  Low volatility, clear trend, high recent accuracy
+  IGNORED when:  High volatility regime, recent prediction failures
+
+Volatility Predictor:
+  TRUSTED when:  Stable regime, calibrated VaR violations match expected
+  IGNORED when:  Regime transition, extreme market moves
+
+Structure Predictor:
+  TRUSTED when:  Normal market hours, typical liquidity
+  IGNORED when:  Weekend, holidays, flash crash events
+```
+
+### Usage
+
+```python
+from cryptoai.adaptive import AdaptiveEnsemble, AdaptiveConfig
+
+config = AdaptiveConfig(
+    state_dim=256,
+    n_price_models=3,
+    n_volatility_models=3,
+    max_drawdown=0.15,
+)
+
+ensemble = AdaptiveEnsemble(config)
+result = ensemble(market_state, portfolio_state)
+
+# Access predictions and confidence
+price_pred = result["ensemble_prediction"]
+confidence = result["confidence"]
+should_trade = result["should_trade"]
+```
+
+---
+
+## News & Black Swan Awareness
+
+The news system (`cryptoai.news`) provides real-time awareness of market-moving events and tail risks.
+
+### Design Principles
+
+1. **Conservative by Default**: When uncertain, do nothing
+2. **Uncertainty Quantification**: Every prediction has confidence bounds
+3. **Explainable During Chaos**: Human-readable risk reports
+4. **False Signal Prevention**: Multi-source confirmation required
+
+### Components
+
+| Component | Purpose |
+|-----------|---------|
+| `FinanceNLPProcessor` | FinBERT-based sentiment and event classification |
+| `ShockDetector` | Detect price/volume shocks in real-time |
+| `AnomalyDetector` | VAE + Z-score anomaly detection |
+| `TailRiskForecaster` | GARCH-based VaR/CVaR with Hill estimator |
+| `DoNothingDecisionEngine` | Explicit abstain state when uncertain |
+
+### System States
+
+| State | Description | Position Multiplier |
+|-------|-------------|---------------------|
+| `NORMAL` | Business as usual | 100% |
+| `ELEVATED_RISK` | Reduce position sizes | 50% |
+| `HIGH_ALERT` | Minimal positions only | 10% |
+| `DO_NOTHING` | Explicit abstain | 0% |
+| `CRISIS_MODE` | Emergency risk-off | 0% (close all) |
+
+### Usage
+
+```python
+from cryptoai.news import NewsBlackSwanSystem, create_news_black_swan_system
+
+# Create system
+system = create_news_black_swan_system(state_dim=256)
+
+# Process news
+event = system.process_news(
+    text="SEC announces investigation into major exchange",
+    source="reuters",
+)
+
+# Process market data
+shock = system.process_market_data(
+    asset="BTCUSDT",
+    price=45000,
+    volume=1000000,
+)
+
+# Get decision
+decision = system.get_decision(
+    model_confidence=0.7,
+    model_disagreement=0.2,
+)
+
+print(decision.explain())
+```
+
+---
+
+## AI Governance & Self-Improvement Loop
+
+The governance system (`cryptoai.governance`) controls AI self-improvement with strict safety boundaries.
+
+### Core Principles
+
+1. **Capital Preservation is Paramount**: No learning can risk more than defined limits
+2. **Bounded Learning**: System learns only what it's allowed to
+3. **Fail-Safe by Default**: When in doubt, do nothing
+4. **Full Auditability**: Every decision is logged and reversible
+
+### Learning Boundaries
+
+**ALLOWED to Learn:**
+- Price prediction
+- Volatility estimation
+- Market regime detection
+- Order timing optimization
+- Feature importance
+- Position sizing (within limits)
+
+**FORBIDDEN to Learn:**
+- Bypass risk limits
+- Disable kill-switches
+- Exceed position limits
+- Modify its own constraints
+- Access unauthorized data
+- Communicate externally
+
+### Kill-Switch Layers
+
+| Layer | Trigger | Action |
+|-------|---------|--------|
+| 1 | Position limits | Block oversized trades |
+| 2 | Drawdown 8% | Warning, reduce size |
+| 3 | Drawdown 12% | Suspend new positions |
+| 4 | Drawdown 15% | Halt all trading |
+| 5 | Anomaly detected | Automatic risk-off |
+| 6 | Human override | Immediate effect |
+
+### Components
+
+| Component | Purpose |
+|-----------|---------|
+| `PerformanceAttributionEngine` | Track WHY we made/lost money |
+| `ModelDecayDetector` | Detect accuracy degradation and drift |
+| `KillSwitchSystem` | Multi-layer emergency stops |
+| `AutoRetrainingController` | Safe model updates with rollback |
+| `AuditLogger` | Immutable decision log |
+| `LearningBoundaries` | Define allowed/forbidden learning |
+
+### Usage
+
+```python
+from cryptoai.governance import AIGovernanceSystem, GovernanceConfig
+
+# Create system
+config = GovernanceConfig(
+    max_drawdown_pct=0.15,
+    require_human_approval=True,
+)
+governance = AIGovernanceSystem(config)
+
+# Check governance on every decision
+result = governance.check_governance(
+    portfolio_state={"drawdown": 0.05, "exposure": 0.3},
+    market_state={"volatility": 0.02, "anomaly_score": 0.1},
+    model_outputs={"price_model": {"prediction": 0.01, "actual": 0.008}},
+)
+
+# Check if trading allowed
+if result["can_trade"]:
+    position_mult = result["position_multiplier"]
+    # Execute with position_mult scaling
+
+# Human override (always takes precedence)
+governance.human_override(
+    state=GovernanceState.HALTED,
+    reason="Manual risk-off for news event",
+    operator_id="trader_1",
+)
+
+# Get system explanation
+print(governance.explain_behavior())
+```
+
+### Performance Attribution
+
+```python
+# Track performance by model, regime, and asset
+attribution = governance.attribution.compute_attribution(window_hours=24)
+
+print(f"Total PnL: {attribution.total_pnl:+.2%}")
+print(f"Alpha (skill): {attribution.alpha_pnl:+.2%}")
+print(f"Beta (market): {attribution.beta_pnl:+.2%}")
+print(f"By Model: {attribution.model_contribution}")
+```
+
+### Auto-Retraining with Safety
+
+```python
+# Check if retraining needed
+should_retrain, trigger, reason = governance.retrain_controller.should_retrain(
+    decay_report=decay_report,
+    samples_available=50000,
+)
+
+if should_retrain:
+    # Request human approval (if configured)
+    request_id = governance.retrain_controller.request_approval(
+        trigger=trigger,
+        models=["price_model"],
+        explanation=reason,
+        expected_improvement=0.02,
+    )
+
+    # Human approves via dashboard or CLI
+    governance.approve_retrain(request_id, approver_id="quant_lead")
+
+    # Save checkpoint before training
+    governance.retrain_controller.save_checkpoint("price_model", model.state_dict())
+
+    # Train model...
+
+    # Validate and rollback if degraded
+    is_valid, reason = governance.retrain_controller.validate_retrain(
+        model_name="price_model",
+        pre_metrics={"accuracy": 0.55},
+        post_metrics={"accuracy": 0.58},
+    )
+
+    if not is_valid:
+        governance.retrain_controller.rollback(model, "price_model")
 ```
 
 ---
@@ -451,6 +725,11 @@ trade/
 | `RiskController` | `cryptoai.risk_engine` | Risk management |
 | `BacktestEngine` | `cryptoai.backtesting` | Historical simulation |
 | `TradingExecutor` | `cryptoai.execution` | Order execution |
+| `AdaptiveEnsemble` | `cryptoai.adaptive` | Multi-model ensemble with meta-learning |
+| `NewsBlackSwanSystem` | `cryptoai.news` | News NLP + tail-risk detection |
+| `AIGovernanceSystem` | `cryptoai.governance` | Self-improvement with safety boundaries |
+| `KillSwitchSystem` | `cryptoai.governance` | Multi-layer emergency stops |
+| `PerformanceAttributionEngine` | `cryptoai.governance` | PnL attribution by factor |
 
 ---
 
