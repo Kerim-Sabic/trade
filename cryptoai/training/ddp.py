@@ -8,8 +8,16 @@ import torch.nn as nn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
-from torch.cuda.amp import GradScaler, autocast
 from loguru import logger
+
+# Handle PyTorch 2.0+ AMP API changes
+try:
+    from torch.amp import GradScaler, autocast as _autocast
+    def autocast(enabled=True, device_type="cuda"):
+        return _autocast(device_type=device_type, enabled=enabled)
+except ImportError:
+    from torch.cuda.amp import GradScaler
+    from torch.cuda.amp import autocast
 
 
 @dataclass
@@ -157,8 +165,15 @@ class DDPTrainer:
         else:
             self.is_distributed = False
 
-        # AMP scaler
-        self.scaler = GradScaler() if config.use_amp else None
+        # AMP scaler - explicitly specify device for PyTorch 2.0+
+        if config.use_amp:
+            try:
+                self.scaler = GradScaler(device="cuda")
+            except TypeError:
+                # Fallback for older PyTorch versions
+                self.scaler = GradScaler()
+        else:
+            self.scaler = None
         self.use_amp = config.use_amp
 
         # Training state

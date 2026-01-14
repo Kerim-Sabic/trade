@@ -36,6 +36,9 @@ class BacktestConfig:
     # Data frequency
     data_frequency: str = "1min"  # 1min, 5min, 15min, 1h
 
+    # Reproducibility
+    random_seed: int = 42  # Seed for deterministic simulation
+
 
 @dataclass
 class Order:
@@ -108,6 +111,9 @@ class BacktestEngine:
         self.market_data = market_data
         self.orderbook_data = orderbook_data
         self.funding_data = funding_data
+
+        # Initialize seeded RNG for reproducibility
+        self._rng = np.random.default_rng(config.random_seed)
 
         # Initialize simulator
         self.simulator = MarketSimulator(config.simulation)
@@ -287,10 +293,10 @@ class BacktestEngine:
             order.order_type,
         )
 
-        # Simulate partial fills
+        # Simulate partial fills (using seeded RNG for reproducibility)
         fill_quantity = order.quantity
         if self.simulator.config.partial_fills_enabled:
-            fill_ratio = np.random.uniform(
+            fill_ratio = self._rng.uniform(
                 self.simulator.config.fill_probability, 1.0
             )
             fill_quantity = order.quantity * fill_ratio
@@ -465,8 +471,39 @@ class BacktestEngine:
         if hour in [0, 8, 16] and self.state.timestamp.minute == 0:
             for asset, position in self.state.positions.items():
                 if asset in self.funding_data:
-                    # Get funding rate
-                    funding_rate = 0.0001  # Placeholder - would index into funding_data
+                    # Get funding rate from historical data
+                    # funding_data is expected to be array with columns: [timestamp, rate]
+                    # or a dict mapping timestamps to rates
+                    asset_funding = self.funding_data[asset]
+
+                    if isinstance(asset_funding, dict):
+                        # Dict mapping timestamps to rates
+                        funding_rate = asset_funding.get(self.state.timestamp, 0.0001)
+                    elif isinstance(asset_funding, np.ndarray):
+                        # Find closest timestamp in funding data
+                        # Assumes funding_data[asset] has shape (N, 2) with [timestamp_idx, rate]
+                        # or just (N,) with rates at regular 8h intervals
+                        if asset_funding.ndim == 1:
+                            # Calculate which funding period we're in
+                            start_ts = self.config.start_date.timestamp()
+                            current_ts = self.state.timestamp.timestamp()
+                            hours_elapsed = (current_ts - start_ts) / 3600
+                            funding_idx = int(hours_elapsed // 8)
+                            if 0 <= funding_idx < len(asset_funding):
+                                funding_rate = float(asset_funding[funding_idx])
+                            else:
+                                funding_rate = 0.0001  # Default if out of range
+                        else:
+                            # 2D array: find matching timestamp
+                            funding_rate = 0.0001  # Default
+                            for row in asset_funding:
+                                if len(row) >= 2 and abs(row[0] - self.state.timestamp.timestamp()) < 3600:
+                                    funding_rate = float(row[1])
+                                    break
+                    else:
+                        # Fallback default
+                        funding_rate = 0.0001
+                        logger.warning(f"Unknown funding_data format for {asset}, using default rate")
 
                     # Long pays positive funding, short receives
                     position_value = position.quantity * position.entry_price
@@ -530,3 +567,5 @@ class BacktestEngine:
         self._trade_history = []
         self._daily_returns = []
         self._order_id = 0
+        # Reset RNG to ensure reproducibility on re-runs
+        self._rng = np.random.default_rng(self.config.random_seed)

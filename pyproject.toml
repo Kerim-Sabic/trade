@@ -7,7 +7,7 @@ name = "cryptoai"
 version = "0.1.0"
 description = "Autonomous Crypto-Native AI Trading Intelligence"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 license = {text = "MIT"}
 authors = [
     {name = "CryptoAI Team"}
@@ -22,63 +22,108 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+# =============================================================================
+# HARDWARE REQUIREMENTS:
+# - 2x RTX 5080 (Blackwell architecture) - requires CUDA 12.4+
+# - 128GB RAM
+# - Ryzen 9 7950X (16 cores / 32 threads)
+#
+# INSTALLATION:
+# 1. Install CUDA 12.4+ from NVIDIA
+# 2. pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+# 3. pip install -e .
+# =============================================================================
+
 dependencies = [
-    "torch>=2.2.0",
-    "numpy>=1.24.0",
-    "pandas>=2.0.0",
+    # Core ML - PyTorch 2.4+ for Blackwell/RTX 5080 support
+    "torch>=2.4.0",
+    "torchvision>=0.19.0",
+    "torchaudio>=2.4.0",
+
+    # Numerical computing
+    "numpy>=1.26.0,<2.0.0",  # NumPy 2.0 has breaking changes
+    "pandas>=2.1.0",
     "polars>=0.20.0",
-    "scipy>=1.11.0",
-    "scikit-learn>=1.3.0",
-    "transformers>=4.36.0",
-    "tiktoken>=0.5.0",
+    "scipy>=1.12.0",
+    "scikit-learn>=1.4.0",
+
+    # Deep learning utilities
+    "transformers>=4.40.0",
+    "tiktoken>=0.6.0",
     "einops>=0.7.0",
+    "flash-attn>=2.5.0;platform_system!='Windows'",  # Flash attention for efficiency
+
+    # Reinforcement learning
     "gymnasium>=0.29.0",
-    "stable-baselines3>=2.2.0",
+    "stable-baselines3>=2.3.0",
+
+    # Exchange connectivity
     "ccxt>=4.2.0",
     "websockets>=12.0",
     "aiohttp>=3.9.0",
-    "httpx>=0.26.0",
+    "httpx>=0.27.0",
+
+    # Data storage
     "redis>=5.0.0",
-    "pydantic>=2.5.0",
-    "pydantic-settings>=2.1.0",
+    "h5py>=3.10.0",
+    "pyarrow>=15.0.0",
+    "duckdb>=0.10.0",
+
+    # Configuration & validation
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
     "python-dotenv>=1.0.0",
+    "hydra-core>=1.3.0",
+    "omegaconf>=2.3.0",
+
+    # Logging & monitoring
     "loguru>=0.7.0",
     "rich>=13.7.0",
     "typer>=0.9.0",
-    "hydra-core>=1.3.0",
-    "omegaconf>=2.3.0",
     "wandb>=0.16.0",
-    "tensorboard>=2.15.0",
-    "prometheus-client>=0.19.0",
-    "fastapi>=0.109.0",
-    "uvicorn>=0.27.0",
+    "tensorboard>=2.16.0",
+    "prometheus-client>=0.20.0",
+
+    # API server
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
     "orjson>=3.9.0",
     "msgpack>=1.0.0",
-    "pyarrow>=15.0.0",
-    "duckdb>=0.9.0",
+
+    # Performance optimization
     "joblib>=1.3.0",
-    "numba>=0.58.0",
+    "numba>=0.59.0",
     "bottleneck>=1.3.0",
-    "optuna>=3.5.0",
-    "plotly>=5.18.0",
+
+    # Hyperparameter optimization
+    "optuna>=3.6.0",
+
+    # Visualization
+    "plotly>=5.20.0",
     "matplotlib>=3.8.0",
-    "h5py>=3.10.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0",
+    "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
     "pytest-xdist>=3.5.0",
-    "mypy>=1.8.0",
-    "ruff>=0.1.0",
-    "black>=24.1.0",
+    "mypy>=1.9.0",
+    "ruff>=0.3.0",
+    "black>=24.3.0",
     "isort>=5.13.0",
     "pre-commit>=3.6.0",
-    "ipython>=8.20.0",
+    "ipython>=8.22.0",
     "ipykernel>=6.29.0",
-    "jupyterlab>=4.0.0",
+    "jupyterlab>=4.1.0",
+]
+
+# RTX 5080 optimized CUDA installation
+cuda = [
+    # Install with: pip install -e .[cuda] --index-url https://download.pytorch.org/whl/cu124
+    "nvidia-cudnn-cu12>=9.0.0",
+    "nvidia-cuda-nvrtc-cu12>=12.4.0",
 ]
 
 [project.scripts]

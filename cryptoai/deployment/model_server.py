@@ -10,8 +10,15 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.cuda.amp import autocast
 from loguru import logger
+
+# Handle PyTorch 2.0+ autocast deprecation
+try:
+    from torch.amp import autocast as _autocast
+    def autocast(enabled=True):
+        return _autocast(device_type="cuda", enabled=enabled)
+except ImportError:
+    from torch.cuda.amp import autocast
 
 
 @dataclass
@@ -207,27 +214,49 @@ class InferenceEngine:
                 request.set_result({"error": str(e)})
 
     def _run_inference(self, states: torch.Tensor) -> Dict[str, torch.Tensor]:
-        """Run full inference pipeline."""
-        # Encode state
-        z = self.encoder(states)
+        """
+        Run full inference pipeline.
 
-        # Get policy action
-        action_dist, value = self.policy(z)
-        action_mean = action_dist.mean
-        action_std = action_dist.stddev
+        The input states tensor should be a pre-encoded latent state from the
+        UnifiedStateEncoder, as the full encoder requires multiple separate
+        tensor inputs that cannot be provided through the simple API.
 
-        # Get black swan risk
-        anomaly_scores, _ = self.black_swan(z)
+        For production, use encode_and_infer() which handles the full pipeline.
 
-        # World model prediction (optional, for planning)
-        # z_next, _, _ = self.world_model(z, action_mean)
+        Args:
+            states: Pre-encoded latent state tensor (batch, state_dim)
+                   or (batch, seq_len, state_dim)
+
+        Returns:
+            Dict with action parameters, value estimate, and risk scores
+        """
+        # Handle sequence dimension if present
+        if states.dim() == 3:
+            # Use last timestep for policy
+            z = states[:, -1, :]
+        else:
+            z = states
+
+        # Get policy action - PolicyNetwork.forward() returns (mean, log_std)
+        action_mean, action_log_std = self.policy(z)
+        action_std = action_log_std.exp()
+
+        # Get black swan risk - BlackSwanDetector.forward() returns a Dict
+        risk_output = self.black_swan(z)
+        anomaly_score = risk_output.get("anomaly_score", torch.zeros(z.shape[0], device=z.device))
+        extreme_risk = risk_output.get("extreme_risk", torch.zeros(z.shape[0], device=z.device))
+
+        # Compute value estimate using critic if available, else use risk-adjusted estimate
+        # Note: Full value estimation requires the critic network
+        value = -extreme_risk  # Placeholder: higher risk = lower value
 
         return {
             "action_mean": action_mean,
             "action_std": action_std,
             "value": value,
-            "anomaly_score": anomaly_scores,
-            "latent_state": z[:, -1] if z.dim() > 2 else z,
+            "anomaly_score": anomaly_score,
+            "extreme_risk": extreme_risk,
+            "latent_state": z,
         }
 
     def _cache_result(self, state: np.ndarray, result: Dict) -> None:
@@ -390,6 +419,7 @@ class ModelServer:
                 action_std: List[float]
                 value: float
                 anomaly_score: float
+                extreme_risk: float
 
             @self._app.post("/infer", response_model=InferenceResponse)
             async def infer(request: InferenceRequest):
@@ -406,11 +436,37 @@ class ModelServer:
                 if "error" in result:
                     raise HTTPException(status_code=500, detail=result["error"])
 
+                # Handle both scalar and array outputs
+                value = result["value"]
+                if hasattr(value, "item"):
+                    value = float(value.item()) if value.numel() == 1 else float(value[0])
+                elif hasattr(value, "__len__"):
+                    value = float(value[0])
+                else:
+                    value = float(value)
+
+                anomaly = result["anomaly_score"]
+                if hasattr(anomaly, "item"):
+                    anomaly = float(anomaly.item()) if anomaly.numel() == 1 else float(anomaly[0])
+                elif hasattr(anomaly, "__len__"):
+                    anomaly = float(anomaly[0])
+                else:
+                    anomaly = float(anomaly)
+
+                extreme = result.get("extreme_risk", 0.0)
+                if hasattr(extreme, "item"):
+                    extreme = float(extreme.item()) if extreme.numel() == 1 else float(extreme[0])
+                elif hasattr(extreme, "__len__"):
+                    extreme = float(extreme[0])
+                else:
+                    extreme = float(extreme)
+
                 return InferenceResponse(
-                    action_mean=result["action_mean"].tolist(),
-                    action_std=result["action_std"].tolist(),
-                    value=float(result["value"]),
-                    anomaly_score=float(result["anomaly_score"]),
+                    action_mean=result["action_mean"].tolist() if hasattr(result["action_mean"], "tolist") else list(result["action_mean"]),
+                    action_std=result["action_std"].tolist() if hasattr(result["action_std"], "tolist") else list(result["action_std"]),
+                    value=value,
+                    anomaly_score=anomaly,
+                    extreme_risk=extreme,
                 )
 
             @self._app.get("/health")
