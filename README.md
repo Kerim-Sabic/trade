@@ -43,11 +43,23 @@ For GPU acceleration:
 ### Option 1: Desktop App (Recommended for Windows)
 
 ```powershell
-# 1. Download the installer from Releases
-# 2. Run CryptoAI-Desktop-Setup.exe
-# 3. Launch from Start Menu or Desktop shortcut
-# 4. Configure Python path in Settings (Ctrl+,)
-# 5. Click "Start Trading" in Shadow Mode
+# 1. Clone the repository
+git clone https://github.com/Kerim-Sabic/trade.git
+cd trade
+
+# 2. Install Python backend first (see Option 2, steps 4-6)
+
+# 3. Build the desktop app
+cd electron-app
+npm install
+npm run build:win
+
+# 4. Run the installer from electron-app/dist/
+# Look for: CryptoAI Desktop Setup 0.2.0.exe
+
+# 5. Launch from Start Menu or Desktop shortcut
+# 6. Configure Python path in Settings (Ctrl+,)
+# 7. Click "Start Trading" in Shadow Mode
 ```
 
 ### Option 2: Command Line Installation
@@ -180,8 +192,18 @@ exchange:
 
 ### Installation (Windows)
 
-1. Download `CryptoAI-Desktop-Setup.exe` from Releases
-2. Run installer (allows custom install location)
+```powershell
+# Build the installer locally
+cd electron-app
+npm install
+npm run build:win
+
+# The installer will be created at:
+# electron-app/dist/CryptoAI Desktop Setup 0.2.0.exe
+```
+
+1. Run the installer from `electron-app/dist/`
+2. Choose installation location (allows custom path)
 3. Launch from Start Menu -> CryptoAI -> CryptoAI Desktop
 
 ### Features
