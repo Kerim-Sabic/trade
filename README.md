@@ -1,247 +1,213 @@
 # CryptoAI - Autonomous Crypto Trading Intelligence
 
-A production-grade autonomous crypto trading system using deep reinforcement learning, multi-source data aggregation, sophisticated risk management, and AI governance with self-improvement capabilities.
+**Version 0.2.0** | **Windows 11 First** | **Production-Grade ML Trading System**
 
-## Key Features
+---
 
-- **Adaptive Intelligence**: Multi-model ensemble with meta-learning that adapts to changing market conditions
-- **News & Black Swan Detection**: Real-time NLP processing with tail-risk forecasting
-- **AI Governance**: Self-improvement loop with strict safety boundaries and human oversight
-- **Professional Backtesting**: Event-driven engine with realistic market simulation
-- **Multi-layer Risk Management**: Kill-switches, position limits, and capital protection
+## Overview
+
+CryptoAI is a professional-grade, ML-driven cryptocurrency trading system designed with Windows 11 as the primary target platform. It features:
+
+- **Deep Reinforcement Learning** - SAC/PPO policy networks with online adaptation
+- **Market State Encoders** - Transformer-based encoding of price, volume, and order flow
+- **Regime Detection** - Automatic detection of market regimes (trending, ranging, volatile)
+- **Risk Management** - Multi-layer kill switches and drawdown protection
+- **Desktop Application** - Electron-based GUI with one-click trading controls
+
+---
 
 ## System Requirements
 
-### Minimum Requirements
-- **OS**: Linux (Ubuntu 20.04+), macOS 12+, or Windows 10/11
-- **Python**: 3.10, 3.11, or 3.12
-- **RAM**: 16GB minimum, 32GB recommended
-- **Storage**: 20GB for dependencies + data
+### Minimum Requirements (Windows 11)
 
-### For GPU Training (Optional but Recommended)
-- **GPU**: NVIDIA GPU with CUDA 12.1 support
-- **VRAM**: 8GB minimum, 16GB+ recommended
-- **Driver**: NVIDIA Driver 525+ with CUDA 12.1
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **OS** | Windows 11 x64 | Windows 11 22H2+ |
+| **Python** | 3.10 | 3.11 |
+| **RAM** | 16 GB | 32 GB |
+| **CPU** | 4 cores | 8+ cores |
+| **Storage** | 10 GB | 50 GB SSD |
+| **GPU** | None (CPU mode) | NVIDIA RTX 3060+ (8GB VRAM) |
 
-### Check GPU Status
-```bash
-nvidia-smi
-nvcc --version
-```
+### GPU Support (Optional)
+
+For GPU acceleration:
+- NVIDIA GPU with 8GB+ VRAM
+- CUDA 12.1+ from [NVIDIA](https://developer.nvidia.com/cuda-downloads)
+- cuDNN 8.9+
 
 ---
 
 ## Quick Start (5 Minutes)
 
-### Step 1: Clone Repository
-```bash
-git clone https://github.com/your-org/cryptoai.git
-cd cryptoai
+### Option 1: Desktop App (Recommended for Windows)
+
+```powershell
+# 1. Download the installer from Releases
+# 2. Run CryptoAI-Desktop-Setup.exe
+# 3. Launch from Start Menu or Desktop shortcut
+# 4. Configure Python path in Settings (Ctrl+,)
+# 5. Click "Start Trading" in Shadow Mode
 ```
 
-### Step 2: Create Virtual Environment
-```bash
-# Using conda (recommended)
-conda create -n cryptoai python=3.11 -y
-conda activate cryptoai
+### Option 2: Command Line Installation
 
-# OR using venv
+```powershell
+# 1. Install Python 3.11 from python.org
+# Download from: https://www.python.org/downloads/release/python-3119/
+# IMPORTANT: Check "Add Python to PATH" during installation
+
+# 2. Open PowerShell and verify Python
+python --version
+# Should show: Python 3.11.x
+
+# 3. Clone the repository
+git clone https://github.com/Kerim-Sabic/trade.git
+cd trade
+
+# 4. Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# venv\Scripts\activate   # Windows
-```
+.\venv\Scripts\Activate.ps1
 
-### Step 3: Install Dependencies
+# 5. Install PyTorch (CPU version for quick start)
+pip install torch torchvision torchaudio
 
-**CPU Only:**
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+# 6. Install CryptoAI
 pip install -e .
+
+# 7. Run in Shadow Mode (safe simulation)
+python -m cryptoai.main --mode shadow --assets BTCUSDT
 ```
 
-**With CUDA (GPU):**
-```bash
+### Option 3: GPU Installation
+
+```powershell
+# After step 4 above, install PyTorch with CUDA support:
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-pip install -e .
-```
 
-### Step 4: Verify Installation
-```bash
-# Check system status
-cryptoai status
-
-# Or run directly
-python -m cryptoai.main --mode shadow --help
-```
-
-### Step 5: Run in Shadow Mode (Demo)
-```bash
-# Shadow mode - simulates trading without real execution
-cryptoai run --mode shadow --assets BTCUSDT
-
-# Or use Python directly
-python -m cryptoai.main --mode shadow --config configs/default.yaml --assets BTCUSDT
-```
-
----
-
-## Installation Methods
-
-### Method 1: pip install (Recommended)
-```bash
-pip install -e ".[dev]"  # Includes development tools
-```
-
-### Method 2: Docker
-```bash
-cd docker
-docker-compose up -d trading-ai
-```
-
-### Method 3: Manual Setup
-```bash
-pip install torch>=2.2.0 --index-url https://download.pytorch.org/whl/cu121
-pip install numpy pandas scipy scikit-learn
-pip install transformers gymnasium ccxt
-pip install loguru rich typer fastapi uvicorn
+# Then continue with step 6
 pip install -e .
 ```
 
 ---
 
-## Usage
+## One-Command Operations
 
-### CLI Commands
-
-```bash
-# Show system status and GPU info
-cryptoai status
-
-# Run in shadow mode (simulation)
-cryptoai run --mode shadow --assets BTCUSDT ETHUSDT
-
-# Run backtesting
-cryptoai backtest --assets BTCUSDT --start 2023-01-01 --end 2024-01-01
-
-# Start distributed training
-cryptoai train --config configs/default.yaml --gpus 2
-
-# Start monitoring dashboard
-cryptoai dashboard --port 8081
-
-# Show version
-cryptoai version
+### Run Trading (Shadow Mode - Safe)
+```powershell
+python -m cryptoai.main --mode shadow --assets BTCUSDT ETHUSDT
 ```
 
-### Python API
+### Run Backtest
+```powershell
+python -m cryptoai.main --mode backtest --assets BTCUSDT
+```
 
-```python
-from cryptoai.utils.config import load_config
-from cryptoai.utils.logging import setup_logging
-from cryptoai.encoders import UnifiedStateEncoder
-from cryptoai.decision_engine import PolicyNetwork
-from cryptoai.world_model import WorldModel
-from cryptoai.black_swan import BlackSwanDetector
+### Run Training
+```powershell
+python -m cryptoai.main --mode train --config configs/default.yaml
+```
 
-# Setup
-setup_logging(level="INFO")
-config = load_config("configs/default.yaml")
+### Run Tests
+```powershell
+pytest tests/ -v
+```
 
-# Initialize models
-encoder = UnifiedStateEncoder(
-    microstructure_dim=40,
-    derivatives_dim=42,
-    onchain_dim=33,
-    event_dim=15,
-)
-
-policy = PolicyNetwork(
-    state_dim=128,
-    action_dim=4,
-    hidden_dim=256,
-)
+### Build Desktop App
+```powershell
+cd electron-app
+npm install
+npm run build:win
 ```
 
 ---
 
 ## Execution Modes
 
-| Mode | Description | Real Trades | Capital Risk |
-|------|-------------|-------------|--------------|
-| `shadow` | Full simulation, no API calls | No | None |
-| `paper` | Testnet execution with real API | No | None |
-| `live` | Real trading with capital at risk | Yes | Real |
-| `backtest` | Historical simulation | No | None |
-| `train` | Distributed model training | No | None |
+| Mode | Description | Risk Level | API Calls |
+|------|-------------|------------|-----------|
+| `shadow` | Pure simulation, no external calls | None | No |
+| `paper` | Exchange testnet trading | None | Testnet only |
+| `backtest` | Historical simulation | None | No |
+| `train` | Model training mode | None | No |
+| `live` | **REAL TRADING** | **HIGH** | **YES** |
 
-### Shadow Mode (Recommended for Testing)
-```bash
-cryptoai run --mode shadow --assets BTCUSDT
-```
-
-### Backtesting
-```bash
-cryptoai backtest --assets BTCUSDT ETHUSDT --capital 100000
-```
-
-### Paper Trading (Testnet)
-Requires testnet API keys in config:
-```yaml
-# configs/default.yaml
-exchange:
-  api_key: "YOUR_TESTNET_API_KEY"
-  api_secret: "YOUR_TESTNET_API_SECRET"
-```
-
-```bash
-cryptoai run --mode paper --assets BTCUSDT
-```
+**WARNING**: Live mode uses REAL money. Only use after thorough testing.
 
 ---
 
 ## Configuration
 
-### Main Config: `configs/default.yaml`
+### Environment Variables
+
+```powershell
+# Optional - Configure before running
+$env:CRYPTOAI_MODE = "shadow"           # Default mode
+$env:CRYPTOAI_EXCHANGE = "binance"      # Exchange selection
+$env:CUDA_VISIBLE_DEVICES = ""          # Disable GPU (CPU only)
+$env:CRYPTOAI_LOG_LEVEL = "INFO"        # Logging level
+```
+
+### Configuration File
+
+The main configuration is in `configs/default.yaml`. Key sections:
 
 ```yaml
 # System settings
 system:
-  device: "auto"  # auto, cuda, cpu
-  precision: "amp"  # fp32, fp16, bf16, amp
-  log_level: "INFO"
+  device: "auto"  # auto, cpu, cuda
+  precision: "amp"  # amp, fp32
 
-# Model dimensions
-model:
-  state_dim: 200
-  hidden_dim: 256
-  latent_dim: 128
-  action_dim: 4
+# Risk management (critical)
+risk_engine:
+  max_position_size: 0.1  # 10% of portfolio per position
+  max_leverage: 3
+  max_drawdown: 0.15  # 15% max drawdown before halt
+  kill_switches:
+    daily_loss_limit: 0.05
+    consecutive_losses: 5
 
-# Risk management
-risk:
-  max_leverage: 5
-  max_drawdown: 0.15
-  daily_loss_limit: 0.05
-  kill_switch_enabled: true
-
-# Backtesting
-backtesting:
-  initial_capital: 100000
-  days: 365
-
-# Exchange (for paper/live modes)
+# Exchange (for live/paper modes)
 exchange:
-  api_key: ""
-  api_secret: ""
+  type: "binance"
+  testnet: true  # Always true for paper mode
+  # API keys set via environment or .env file
 ```
 
-### Environment Variables
+---
 
-```bash
-# Optional: Override config values
-export CRYPTOAI_LOG_LEVEL=DEBUG
-export CRYPTOAI_DEVICE=cuda
-export CUDA_VISIBLE_DEVICES=0,1
+## Desktop Application
+
+### Installation (Windows)
+
+1. Download `CryptoAI-Desktop-Setup.exe` from Releases
+2. Run installer (allows custom install location)
+3. Launch from Start Menu -> CryptoAI -> CryptoAI Desktop
+
+### Features
+
+- **One-Click Trading** - Start/Stop with single button
+- **Kill Switch** - Emergency stop accessible via Ctrl+Shift+K
+- **Live Mode Protection** - Confirmation dialog for real trading
+- **Real-time Logs** - Python backend output visible in UI
+- **System Tray** - Minimize to tray, continue trading
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+,` | Open Settings |
+| `Ctrl+Shift+K` | Emergency Kill Switch |
+| `Ctrl+Enter` | Start Trading |
+| `Ctrl+.` | Stop Trading |
+
+### Building from Source
+
+```powershell
+cd electron-app
+npm install
+npm run build:win
+# Output: electron-app/dist/CryptoAI-Desktop-Setup.exe
 ```
 
 ---
@@ -250,446 +216,149 @@ export CUDA_VISIBLE_DEVICES=0,1
 
 ```
 cryptoai/
-├── adaptive/          # TRUE Adaptive Intelligence System
-│   ├── __init__.py    # Multi-model ensemble with meta-learning
-│   └── validation.py  # Online validation and overfitting detection
-│
-├── news/              # News & Black Swan Awareness
-│   └── __init__.py    # NLP + tail-risk + shock detection
-│
-├── governance/        # AI Governance & Self-Improvement Loop
-│   └── __init__.py    # Safety boundaries, kill-switches, audit
-│
-├── backtesting/       # Professional Backtesting Engine
-│   ├── __init__.py    # Event-driven backtest with realistic simulation
-│   └── data_sources.py # Historical data management
-│
-├── data_universe/     # Multi-source data aggregation
-│   ├── market_microstructure/  # L2 orderbook, trades
-│   ├── derivatives/   # Funding rates, open interest
-│   ├── onchain/       # Exchange flows, whale tracking
-│   └── events/        # News, sentiment analysis
-│
-├── encoders/          # Neural state encoders
-│   ├── unified.py     # Combined encoder
-│   ├── order_flow.py  # Transformer for microstructure
-│   └── derivatives.py # LSTM for derivatives data
-│
+├── encoders/          # Neural network encoders
+│   ├── unified.py     # Combined state encoder
+│   ├── order_flow.py  # Microstructure encoder
+│   └── regime.py      # Market regime detection
+├── decision_engine/   # Policy and control
+│   ├── policy.py      # SAC/PPO networks
+│   └── meta_controller.py  # Regime-aware controller
 ├── world_model/       # Market dynamics prediction
-│   └── temporal_transformer.py
-│
-├── decision_engine/   # Hierarchical RL
-│   ├── meta_controller.py  # Regime-aware controller
-│   └── policy.py      # SAC policy network
-│
-├── black_swan/        # Tail risk detection
-│   ├── detector.py    # VAE + Isolation Forest
-│   └── tail_risk.py   # Extreme value theory
-│
-├── risk_engine/       # Risk management
-│   ├── controller.py  # Position limits
-│   └── kill_switch.py # Emergency stop
-│
-├── execution/         # Order management
-│   └── exchange_client.py  # Binance/OKX/Bybit
-│
-├── training/          # Distributed training
-│   ├── trainer.py     # Unified trainer
-│   └── ddp.py         # Multi-GPU support
-│
-└── monitoring/        # Observability
-    ├── dashboard.py   # Web UI
-    └── drift_detector.py  # Distribution shift
+├── black_swan/        # Anomaly detection
+├── risk_engine/       # Position and risk management
+├── backtesting/       # Event-driven simulation
+├── training/          # DDP training infrastructure
+├── execution/         # Exchange connectivity
+├── monitoring/        # Metrics and alerts
+└── main.py            # Entry point
 ```
 
 ---
 
-## Adaptive Intelligence System
+## Testing
 
-The adaptive intelligence system (`cryptoai.adaptive`) implements a multi-model ensemble with meta-learning capabilities.
-
-### Key Components
-
-| Component | Purpose |
-|-----------|---------|
-| `PricePredictor` | Direction and magnitude prediction |
-| `VolatilityPredictor` | Volatility and tail-risk estimation |
-| `StructurePredictor` | Liquidity and market structure |
-| `RegimeDetector` | Bull/bear/trending/ranging detection |
-| `MetaController` | Dynamic model weighting |
-| `SafetyController` | Risk-off triggers and validation |
-
-### Model Trust Logic
-
-Models are trusted or ignored based on market conditions:
-
-```
-Price Predictor:
-  TRUSTED when:  Low volatility, clear trend, high recent accuracy
-  IGNORED when:  High volatility regime, recent prediction failures
-
-Volatility Predictor:
-  TRUSTED when:  Stable regime, calibrated VaR violations match expected
-  IGNORED when:  Regime transition, extreme market moves
-
-Structure Predictor:
-  TRUSTED when:  Normal market hours, typical liquidity
-  IGNORED when:  Weekend, holidays, flash crash events
+### Run All Tests
+```powershell
+pytest tests/ -v
 ```
 
-### Usage
+### Run Specific Test Categories
+```powershell
+# Unit tests only
+pytest tests/test_encoders.py tests/test_training.py -v
 
-```python
-from cryptoai.adaptive import AdaptiveEnsemble, AdaptiveConfig
+# Backtesting tests
+pytest tests/test_backtesting.py -v
 
-config = AdaptiveConfig(
-    state_dim=256,
-    n_price_models=3,
-    n_volatility_models=3,
-    max_drawdown=0.15,
-)
+# Risk engine tests (critical)
+pytest tests/test_risk_engine.py -v
+```
 
-ensemble = AdaptiveEnsemble(config)
-result = ensemble(market_state, portfolio_state)
-
-# Access predictions and confidence
-price_pred = result["ensemble_prediction"]
-confidence = result["confidence"]
-should_trade = result["should_trade"]
+### Test Coverage
+```powershell
+pytest tests/ --cov=cryptoai --cov-report=html
+# Open htmlcov/index.html in browser
 ```
 
 ---
 
-## News & Black Swan Awareness
+## Common Windows Errors & Fixes
 
-The news system (`cryptoai.news`) provides real-time awareness of market-moving events and tail risks.
-
-### Design Principles
-
-1. **Conservative by Default**: When uncertain, do nothing
-2. **Uncertainty Quantification**: Every prediction has confidence bounds
-3. **Explainable During Chaos**: Human-readable risk reports
-4. **False Signal Prevention**: Multi-source confirmation required
-
-### Components
-
-| Component | Purpose |
-|-----------|---------|
-| `FinanceNLPProcessor` | FinBERT-based sentiment and event classification |
-| `ShockDetector` | Detect price/volume shocks in real-time |
-| `AnomalyDetector` | VAE + Z-score anomaly detection |
-| `TailRiskForecaster` | GARCH-based VaR/CVaR with Hill estimator |
-| `DoNothingDecisionEngine` | Explicit abstain state when uncertain |
-
-### System States
-
-| State | Description | Position Multiplier |
-|-------|-------------|---------------------|
-| `NORMAL` | Business as usual | 100% |
-| `ELEVATED_RISK` | Reduce position sizes | 50% |
-| `HIGH_ALERT` | Minimal positions only | 10% |
-| `DO_NOTHING` | Explicit abstain | 0% |
-| `CRISIS_MODE` | Emergency risk-off | 0% (close all) |
-
-### Usage
-
-```python
-from cryptoai.news import NewsBlackSwanSystem, create_news_black_swan_system
-
-# Create system
-system = create_news_black_swan_system(state_dim=256)
-
-# Process news
-event = system.process_news(
-    text="SEC announces investigation into major exchange",
-    source="reuters",
-)
-
-# Process market data
-shock = system.process_market_data(
-    asset="BTCUSDT",
-    price=45000,
-    volume=1000000,
-)
-
-# Get decision
-decision = system.get_decision(
-    model_confidence=0.7,
-    model_disagreement=0.2,
-)
-
-print(decision.explain())
+### Error: `torch not found`
+```powershell
+# Solution: Install PyTorch explicitly
+pip install torch torchvision torchaudio
 ```
-
----
-
-## AI Governance & Self-Improvement Loop
-
-The governance system (`cryptoai.governance`) controls AI self-improvement with strict safety boundaries.
-
-### Core Principles
-
-1. **Capital Preservation is Paramount**: No learning can risk more than defined limits
-2. **Bounded Learning**: System learns only what it's allowed to
-3. **Fail-Safe by Default**: When in doubt, do nothing
-4. **Full Auditability**: Every decision is logged and reversible
-
-### Learning Boundaries
-
-**ALLOWED to Learn:**
-- Price prediction
-- Volatility estimation
-- Market regime detection
-- Order timing optimization
-- Feature importance
-- Position sizing (within limits)
-
-**FORBIDDEN to Learn:**
-- Bypass risk limits
-- Disable kill-switches
-- Exceed position limits
-- Modify its own constraints
-- Access unauthorized data
-- Communicate externally
-
-### Kill-Switch Layers
-
-| Layer | Trigger | Action |
-|-------|---------|--------|
-| 1 | Position limits | Block oversized trades |
-| 2 | Drawdown 8% | Warning, reduce size |
-| 3 | Drawdown 12% | Suspend new positions |
-| 4 | Drawdown 15% | Halt all trading |
-| 5 | Anomaly detected | Automatic risk-off |
-| 6 | Human override | Immediate effect |
-
-### Components
-
-| Component | Purpose |
-|-----------|---------|
-| `PerformanceAttributionEngine` | Track WHY we made/lost money |
-| `ModelDecayDetector` | Detect accuracy degradation and drift |
-| `KillSwitchSystem` | Multi-layer emergency stops |
-| `AutoRetrainingController` | Safe model updates with rollback |
-| `AuditLogger` | Immutable decision log |
-| `LearningBoundaries` | Define allowed/forbidden learning |
-
-### Usage
-
-```python
-from cryptoai.governance import AIGovernanceSystem, GovernanceConfig
-
-# Create system
-config = GovernanceConfig(
-    max_drawdown_pct=0.15,
-    require_human_approval=True,
-)
-governance = AIGovernanceSystem(config)
-
-# Check governance on every decision
-result = governance.check_governance(
-    portfolio_state={"drawdown": 0.05, "exposure": 0.3},
-    market_state={"volatility": 0.02, "anomaly_score": 0.1},
-    model_outputs={"price_model": {"prediction": 0.01, "actual": 0.008}},
-)
-
-# Check if trading allowed
-if result["can_trade"]:
-    position_mult = result["position_multiplier"]
-    # Execute with position_mult scaling
-
-# Human override (always takes precedence)
-governance.human_override(
-    state=GovernanceState.HALTED,
-    reason="Manual risk-off for news event",
-    operator_id="trader_1",
-)
-
-# Get system explanation
-print(governance.explain_behavior())
-```
-
-### Performance Attribution
-
-```python
-# Track performance by model, regime, and asset
-attribution = governance.attribution.compute_attribution(window_hours=24)
-
-print(f"Total PnL: {attribution.total_pnl:+.2%}")
-print(f"Alpha (skill): {attribution.alpha_pnl:+.2%}")
-print(f"Beta (market): {attribution.beta_pnl:+.2%}")
-print(f"By Model: {attribution.model_contribution}")
-```
-
-### Auto-Retraining with Safety
-
-```python
-# Check if retraining needed
-should_retrain, trigger, reason = governance.retrain_controller.should_retrain(
-    decay_report=decay_report,
-    samples_available=50000,
-)
-
-if should_retrain:
-    # Request human approval (if configured)
-    request_id = governance.retrain_controller.request_approval(
-        trigger=trigger,
-        models=["price_model"],
-        explanation=reason,
-        expected_improvement=0.02,
-    )
-
-    # Human approves via dashboard or CLI
-    governance.approve_retrain(request_id, approver_id="quant_lead")
-
-    # Save checkpoint before training
-    governance.retrain_controller.save_checkpoint("price_model", model.state_dict())
-
-    # Train model...
-
-    # Validate and rollback if degraded
-    is_valid, reason = governance.retrain_controller.validate_retrain(
-        model_name="price_model",
-        pre_metrics={"accuracy": 0.55},
-        post_metrics={"accuracy": 0.58},
-    )
-
-    if not is_valid:
-        governance.retrain_controller.rollback(model, "price_model")
-```
-
----
-
-## Training
-
-### Generate Synthetic Data (for Testing)
-```bash
-cryptoai train --config configs/default.yaml --synthetic
-```
-
-### Distributed Training (Multi-GPU)
-```bash
-# Auto-detect GPUs
-cryptoai train --config configs/default.yaml
-
-# Specify GPU count
-cryptoai train --config configs/default.yaml --gpus 2
-```
-
-### Using torchrun
-```bash
-torchrun --nproc_per_node=2 scripts/run_training.py \
-    --config configs/default.yaml \
-    --data-dir data/
-```
-
----
-
-## Monitoring Dashboard
-
-Start the web dashboard:
-```bash
-cryptoai dashboard --port 8081
-```
-
-Access at: http://localhost:8081
-
-Features:
-- Real-time metrics visualization
-- Drift detection status
-- Active alerts management
-- System health overview
-
----
-
-## Docker Deployment
-
-### Quick Start with Docker
-```bash
-cd docker
-docker-compose up -d trading-ai
-```
-
-### Full Stack (with Prometheus + Grafana)
-```bash
-cd docker
-docker-compose up -d
-```
-
-Services:
-- `trading-ai`: Main trading service (port 8080, 8081)
-- `prometheus`: Metrics collection (port 9090)
-- `grafana`: Visualization (port 3000)
-- `redis`: Caching (port 6379)
-
----
-
-## Common Errors & Solutions
 
 ### Error: `ModuleNotFoundError: No module named 'cryptoai'`
-```bash
-# Ensure you're in the project root and installed in editable mode
-cd /path/to/cryptoai
+```powershell
+# Solution: Install in development mode
 pip install -e .
 ```
 
 ### Error: `CUDA out of memory`
-```bash
-# Reduce batch size in config or use CPU
-cryptoai run --mode shadow  # Uses config defaults
-# Or set environment variable
-export CUDA_VISIBLE_DEVICES=""  # Force CPU
+```powershell
+# Solution: Use CPU mode
+$env:CUDA_VISIBLE_DEVICES = ""
+python -m cryptoai.main --mode shadow
 ```
 
-### Error: `torch.cuda.is_available() returns False`
-```bash
-# Check CUDA installation
-nvidia-smi
-nvcc --version
-
-# Reinstall PyTorch with CUDA
-pip uninstall torch
-pip install torch --index-url https://download.pytorch.org/whl/cu121
+### Error: `Permission denied` when writing files
+```powershell
+# Solution: Run PowerShell as Administrator or change install location
 ```
 
-### Error: `Connection refused` on dashboard
-```bash
-# Check if port is in use
-lsof -i :8081
-
-# Use different port
-cryptoai dashboard --port 8082
+### Error: Electron app won't start
+```powershell
+# Solution: Verify Python path in Settings (Ctrl+,)
+# Default: python
+# If using venv: C:\path\to\venv\Scripts\python.exe
 ```
 
-### Error: `Exchange API authentication failed`
-- Ensure API keys are set in `configs/default.yaml`
-- For paper trading, use testnet API keys
-- Check API key permissions (need trading access)
-
-### Error: `h5py not found`
-```bash
-pip install h5py>=3.10.0
+### Error: `DLL load failed` on Windows
+```powershell
+# Solution: Install Visual C++ Redistributable
+# Download from: https://aka.ms/vs/17/release/vc_redist.x64.exe
 ```
+
+### Error: NCCL not available on Windows
+```
+# This is expected - Windows uses 'gloo' backend instead of 'nccl'
+# The system automatically detects and switches backends
+```
+
+---
+
+## Risk Warnings
+
+1. **This is experimental software** - Use at your own risk
+2. **Cryptocurrency trading is highly risky** - You can lose all invested capital
+3. **Past performance does not guarantee future results**
+4. **Always start in Shadow Mode** - Test thoroughly before any real trading
+5. **Never invest more than you can afford to lose**
 
 ---
 
 ## Development
 
-### Run Tests
-```bash
+### Setting Up Development Environment
+```powershell
+# Clone and setup
+git clone https://github.com/Kerim-Sabic/trade.git
+cd trade
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# Install with dev dependencies
+pip install torch torchvision torchaudio
+pip install -e ".[dev]"
+
+# Run tests
 pytest tests/ -v
-```
 
-### Code Formatting
-```bash
-black cryptoai/
+# Run linting
 ruff check cryptoai/
+
+# Run type checking
+mypy cryptoai/ --ignore-missing-imports
 ```
 
-### Type Checking
-```bash
-mypy cryptoai/
-```
+### Code Style
+- Python: Black formatter, Ruff linter
+- Type hints: Required for public APIs
+- Docstrings: Google style
+
+---
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration on Windows:
+
+- **Python Tests**: Unit tests, integration tests, import validation
+- **Electron Build**: Windows installer (.exe) and portable builds
+- **Security Scan**: Bandit and Safety vulnerability checks
+
+See `.github/workflows/windows-ci.yml` for details.
 
 ---
 
@@ -697,55 +366,33 @@ mypy cryptoai/
 
 ```
 trade/
-├── cryptoai/           # Main Python package
-├── configs/            # YAML configurations
-│   └── default.yaml
-├── docker/             # Docker deployment
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── prometheus.yml
-├── scripts/            # Utility scripts
-│   └── run_training.py
-├── pyproject.toml      # Package configuration
-└── README.md           # This file
+├── cryptoai/              # Main Python package
+├── configs/               # Configuration files
+├── electron-app/          # Desktop application
+├── tests/                 # Test suite
+├── docker/                # Docker configuration
+├── scripts/               # Utility scripts
+├── .github/workflows/     # CI/CD pipelines
+├── pyproject.toml         # Python package config
+├── LICENSE                # MIT License
+└── README.md              # This file
 ```
-
----
-
-## API Reference
-
-### Core Classes
-
-| Class | Module | Purpose |
-|-------|--------|---------|
-| `UnifiedStateEncoder` | `cryptoai.encoders` | Encodes market state |
-| `PolicyNetwork` | `cryptoai.decision_engine` | RL policy |
-| `WorldModel` | `cryptoai.world_model` | Dynamics prediction |
-| `BlackSwanDetector` | `cryptoai.black_swan` | Anomaly detection |
-| `RiskController` | `cryptoai.risk_engine` | Risk management |
-| `BacktestEngine` | `cryptoai.backtesting` | Historical simulation |
-| `TradingExecutor` | `cryptoai.execution` | Order execution |
-| `AdaptiveEnsemble` | `cryptoai.adaptive` | Multi-model ensemble with meta-learning |
-| `NewsBlackSwanSystem` | `cryptoai.news` | News NLP + tail-risk detection |
-| `AIGovernanceSystem` | `cryptoai.governance` | Self-improvement with safety boundaries |
-| `KillSwitchSystem` | `cryptoai.governance` | Multi-layer emergency stops |
-| `PerformanceAttributionEngine` | `cryptoai.governance` | PnL attribution by factor |
 
 ---
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
 ## Support
 
-- **Issues**: https://github.com/your-org/cryptoai/issues
-- **Documentation**: See `/docs` directory
+- **Issues**: [GitHub Issues](https://github.com/Kerim-Sabic/trade/issues)
+- **Documentation**: This README and inline code documentation
 
 ---
 
 ## Disclaimer
 
-This software is for educational and research purposes only. Cryptocurrency trading carries substantial risk of loss. Always test thoroughly with paper trading before using real capital. The authors are not responsible for any financial losses.
+This software is provided for educational and research purposes only. The authors and contributors are not responsible for any financial losses incurred through the use of this software. Cryptocurrency trading involves substantial risk of loss. **USE AT YOUR OWN RISK.**

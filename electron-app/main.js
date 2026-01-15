@@ -454,6 +454,7 @@ async function startPythonBackend(mode, assets, configPath, exchange) {
 
 /**
  * Stop the Python backend process
+ * Windows 11 Compatible - uses taskkill for reliable process termination
  */
 function stopPythonBackend() {
   if (!pythonProcess) {
@@ -463,21 +464,42 @@ function stopPythonBackend() {
 
   log.info("Stopping Python backend");
 
-  // Send SIGINT first for graceful shutdown
-  if (process.platform === "win32") {
-    // Windows doesn't support SIGINT well
-    pythonProcess.kill();
-  } else {
-    pythonProcess.kill("SIGINT");
-  }
+  const pid = pythonProcess.pid;
 
-  // Force kill after timeout
-  setTimeout(() => {
-    if (pythonProcess) {
-      log.warn("Force killing Python process");
-      pythonProcess.kill("SIGKILL");
+  if (process.platform === "win32") {
+    // Windows: Use taskkill for more reliable termination
+    // First try graceful termination
+    try {
+      pythonProcess.kill("SIGTERM");
+    } catch (e) {
+      log.warn(`SIGTERM failed: ${e.message}`);
     }
-  }, 5000);
+
+    // Force kill after timeout using taskkill
+    setTimeout(() => {
+      if (pythonProcess) {
+        log.warn("Force killing Python process with taskkill");
+        const { exec } = require("child_process");
+        // /T kills child processes, /F forces termination
+        exec(`taskkill /PID ${pid} /T /F`, (error) => {
+          if (error) {
+            log.warn(`taskkill error: ${error.message}`);
+          }
+        });
+      }
+    }, 3000);
+  } else {
+    // Unix: Use SIGINT then SIGKILL
+    pythonProcess.kill("SIGINT");
+
+    // Force kill after timeout
+    setTimeout(() => {
+      if (pythonProcess) {
+        log.warn("Force killing Python process");
+        pythonProcess.kill("SIGKILL");
+      }
+    }, 5000);
+  }
 }
 
 // IPC Handlers

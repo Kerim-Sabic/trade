@@ -1,14 +1,24 @@
-"""Distributed Data Parallel (DDP) utilities for multi-GPU training."""
+"""Distributed Data Parallel (DDP) utilities for multi-GPU training.
+
+Windows 11 Compatibility:
+- Uses 'gloo' backend on Windows (NCCL is Linux-only)
+- CPU fallback for systems without CUDA
+- Handles AMP API changes across PyTorch versions
+"""
 
 import os
+import sys
 from typing import Optional, Dict, Any, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import torch
 import torch.nn as nn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
 from loguru import logger
+
+# Platform detection
+IS_WINDOWS = sys.platform == "win32"
 
 # Handle PyTorch 2.0+ AMP API changes
 try:
@@ -20,13 +30,38 @@ except ImportError:
     from torch.cuda.amp import autocast
 
 
+def get_default_backend() -> str:
+    """Get the appropriate distributed backend for the current platform.
+
+    Returns:
+        'nccl' on Linux with CUDA, 'gloo' on Windows or CPU-only systems
+    """
+    if IS_WINDOWS:
+        # Windows doesn't support NCCL
+        return "gloo"
+    elif torch.cuda.is_available():
+        return "nccl"
+    else:
+        return "gloo"
+
+
+def get_default_world_size() -> int:
+    """Get default world size based on available GPUs."""
+    if torch.cuda.is_available():
+        return max(1, torch.cuda.device_count())
+    return 1
+
+
 @dataclass
 class DDPConfig:
-    """Configuration for DDP training."""
+    """Configuration for DDP training.
 
-    # Distributed settings
-    world_size: int = 2  # Number of GPUs (2x RTX 5080)
-    backend: str = "nccl"  # NCCL for GPU communication
+    Windows 11 Compatible - automatically selects 'gloo' backend on Windows.
+    """
+
+    # Distributed settings - use factory defaults for platform detection
+    world_size: int = field(default_factory=get_default_world_size)
+    backend: str = field(default_factory=get_default_backend)
     master_addr: str = "localhost"
     master_port: str = "12355"
 
@@ -40,24 +75,44 @@ class DDPConfig:
     checkpoint_dir: str = "checkpoints"
     save_every_n_steps: int = 1000
 
+    def __post_init__(self):
+        """Validate and adjust configuration for platform compatibility."""
+        # Ensure Windows uses gloo
+        if IS_WINDOWS and self.backend == "nccl":
+            logger.warning("NCCL not available on Windows, switching to gloo backend")
+            self.backend = "gloo"
+
+        # Ensure world_size is at least 1
+        if self.world_size < 1:
+            self.world_size = 1
+
+        # Create checkpoint directory if it doesn't exist
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+
 
 def setup_ddp(
     rank: int,
     world_size: int,
-    backend: str = "nccl",
+    backend: str = None,
     master_addr: str = "localhost",
     master_port: str = "12355",
 ) -> None:
     """
     Initialize distributed process group.
 
+    Windows 11 Compatible - uses gloo backend on Windows.
+
     Args:
         rank: Process rank (GPU index)
         world_size: Total number of processes
-        backend: Communication backend (nccl for GPU)
+        backend: Communication backend (auto-detected if None)
         master_addr: Master node address
         master_port: Master node port
     """
+    # Auto-detect backend if not specified
+    if backend is None:
+        backend = get_default_backend()
+
     os.environ["MASTER_ADDR"] = master_addr
     os.environ["MASTER_PORT"] = master_port
 
@@ -68,10 +123,12 @@ def setup_ddp(
         world_size=world_size,
     )
 
-    # Set device for this process
-    torch.cuda.set_device(rank)
-
-    logger.info(f"DDP initialized: rank {rank}/{world_size}")
+    # Set device for this process (only if CUDA available)
+    if torch.cuda.is_available() and rank < torch.cuda.device_count():
+        torch.cuda.set_device(rank)
+        logger.info(f"DDP initialized: rank {rank}/{world_size}, backend={backend}, device=cuda:{rank}")
+    else:
+        logger.info(f"DDP initialized: rank {rank}/{world_size}, backend={backend}, device=cpu")
 
 
 def cleanup_ddp() -> None:
@@ -134,8 +191,10 @@ class DDPTrainer:
     """
     Base trainer class with DDP support.
 
-    Designed for dual RTX 5080 GPUs with:
-    - Automatic Mixed Precision (AMP)
+    Windows 11 Compatible:
+    - Automatic backend selection (gloo on Windows)
+    - CPU fallback when no GPU available
+    - Automatic Mixed Precision (AMP) with GPU
     - Gradient accumulation
     - Checkpoint management
     - Learning rate scheduling
@@ -149,24 +208,41 @@ class DDPTrainer:
     ):
         self.config = config
         self.rank = rank
-        self.device = torch.device(f"cuda:{rank}")
 
-        # Move model to device and wrap with DDP
+        # Determine device based on availability
+        if torch.cuda.is_available() and rank < torch.cuda.device_count():
+            self.device = torch.device(f"cuda:{rank}")
+            self.is_cuda = True
+        else:
+            self.device = torch.device("cpu")
+            self.is_cuda = False
+            logger.info("Running on CPU - CUDA not available")
+
+        # Move model to device
         self.model = model.to(self.device)
 
+        # Wrap with DDP if distributed
         if config.world_size > 1 and dist.is_initialized():
-            self.model = DDP(
-                self.model,
-                device_ids=[rank],
-                output_device=rank,
-                find_unused_parameters=config.find_unused_parameters,
-            )
+            if self.is_cuda:
+                self.model = DDP(
+                    self.model,
+                    device_ids=[rank],
+                    output_device=rank,
+                    find_unused_parameters=config.find_unused_parameters,
+                )
+            else:
+                # CPU-only DDP (no device_ids)
+                self.model = DDP(
+                    self.model,
+                    find_unused_parameters=config.find_unused_parameters,
+                )
             self.is_distributed = True
         else:
             self.is_distributed = False
 
-        # AMP scaler - explicitly specify device for PyTorch 2.0+
-        if config.use_amp:
+        # AMP scaler - only for CUDA devices
+        self.use_amp = config.use_amp and self.is_cuda
+        if self.use_amp:
             try:
                 self.scaler = GradScaler(device="cuda")
             except TypeError:
@@ -174,7 +250,8 @@ class DDPTrainer:
                 self.scaler = GradScaler()
         else:
             self.scaler = None
-        self.use_amp = config.use_amp
+            if config.use_amp and not self.is_cuda:
+                logger.info("AMP disabled - requires CUDA device")
 
         # Training state
         self.global_step = 0
