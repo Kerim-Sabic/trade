@@ -1,9 +1,13 @@
-"""Main entry point for the CryptoAI Trading System."""
+"""Main entry point for the CryptoAI Trading System.
+
+Windows 11 Compatible - handles signal differences between Windows and Unix.
+"""
 
 import argparse
 import asyncio
 import signal
 import sys
+import os
 from pathlib import Path
 from typing import Optional
 from datetime import datetime, timedelta
@@ -15,6 +19,9 @@ from loguru import logger
 from cryptoai.utils.config import load_config
 from cryptoai.utils.logging import setup_logging
 from cryptoai.utils.device import get_device
+
+# Platform detection
+IS_WINDOWS = sys.platform == "win32"
 
 
 def parse_args():
@@ -307,31 +314,58 @@ async def run_training(config: dict, args) -> None:
     launch_distributed(train_fn, world_size=ddp_config.world_size, config=ddp_config)
 
 
+def setup_signal_handlers():
+    """Setup signal handlers with Windows compatibility.
+
+    Windows only supports SIGINT, SIGTERM, SIGABRT, and SIGFPE.
+    SIGTERM doesn't work reliably on Windows, so we primarily rely on SIGINT.
+    """
+    def signal_handler(signum, frame):
+        logger.info(f"Received shutdown signal ({signum})")
+        # Emit governance state for Electron app
+        print("GOVERNANCE_STATE: STOPPED")
+        sys.exit(0)
+
+    # SIGINT works on both Windows and Unix
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # SIGTERM is Unix-specific and doesn't work well on Windows
+    if not IS_WINDOWS:
+        signal.signal(signal.SIGTERM, signal_handler)
+
+
 def main():
     """Main entry point."""
     args = parse_args()
 
-    # Setup logging
+    # Setup logging with platform-aware output
     setup_logging(level=args.log_level)
+
+    # Log startup info including governance state for Electron app
+    logger.info(f"CryptoAI v0.2.0 starting on {'Windows' if IS_WINDOWS else 'Unix'}")
+    print("GOVERNANCE_STATE: OPERATIONAL")
 
     # Load configuration
     config = load_config(args.config)
 
-    # Setup signal handlers
-    def signal_handler(signum, frame):
-        logger.info("Received shutdown signal")
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # Setup signal handlers (Windows-compatible)
+    setup_signal_handlers()
 
     # Run based on mode
-    if args.mode == "backtest":
-        asyncio.run(run_backtest(config, args))
-    elif args.mode == "train":
-        asyncio.run(run_training(config, args))
-    else:
-        asyncio.run(run_trading(config, args))
+    try:
+        if args.mode == "backtest":
+            asyncio.run(run_backtest(config, args))
+        elif args.mode == "train":
+            asyncio.run(run_training(config, args))
+        else:
+            asyncio.run(run_trading(config, args))
+    except KeyboardInterrupt:
+        logger.info("Received keyboard interrupt, shutting down")
+        print("GOVERNANCE_STATE: STOPPED")
+    except Exception as e:
+        logger.error(f"Unhandled exception: {e}")
+        print("GOVERNANCE_STATE: HALTED")
+        raise
 
 
 if __name__ == "__main__":
