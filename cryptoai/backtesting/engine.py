@@ -24,6 +24,10 @@ class BacktestConfig:
     # Market simulation
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
 
+    # Fee shortcuts (aliases to simulation config for convenience)
+    maker_fee: float = None
+    taker_fee: float = None
+
     # Walk-forward settings
     train_window_days: int = 90
     test_window_days: int = 30
@@ -38,6 +42,18 @@ class BacktestConfig:
 
     # Reproducibility
     random_seed: int = 42  # Seed for deterministic simulation
+
+    def __post_init__(self):
+        """Initialize fee values from simulation config or use provided values."""
+        if self.maker_fee is not None:
+            self.simulation.maker_fee = self.maker_fee
+        else:
+            self.maker_fee = self.simulation.maker_fee
+
+        if self.taker_fee is not None:
+            self.simulation.taker_fee = self.taker_fee
+        else:
+            self.taker_fee = self.simulation.taker_fee
 
 
 @dataclass
@@ -79,18 +95,48 @@ class Position:
 class BacktestState:
     """Current backtest state."""
 
-    timestamp: datetime
-    capital: float
-    equity: float
-    positions: Dict[str, Position]
-    pending_orders: List[Order]
-    filled_orders: List[Order]
-    daily_pnl: float
-    total_fees: float
-    total_slippage: float
-    total_funding: float
-    drawdown: float
-    max_equity: float
+    timestamp: datetime = None
+    capital: float = 0.0
+    equity: float = 0.0
+    positions: Dict[str, Position] = field(default_factory=dict)
+    pending_orders: List[Order] = field(default_factory=list)
+    filled_orders: List[Order] = field(default_factory=list)
+    daily_pnl: float = 0.0
+    total_fees: float = 0.0
+    total_slippage: float = 0.0
+    total_funding: float = 0.0
+    drawdown: float = 0.0
+    max_equity: float = 0.0
+
+    # Aliases for backwards compatibility
+    @property
+    def cash(self) -> float:
+        """Alias for capital for backwards compatibility."""
+        return self.capital
+
+    @cash.setter
+    def cash(self, value: float):
+        """Setter for cash alias."""
+        self.capital = value
+
+    @classmethod
+    def create(cls, initial_capital: float = 100000.0, timestamp: datetime = None) -> "BacktestState":
+        """Factory method to create initial state."""
+        ts = timestamp or datetime.now()
+        return cls(
+            timestamp=ts,
+            capital=initial_capital,
+            equity=initial_capital,
+            positions={},
+            pending_orders=[],
+            filled_orders=[],
+            daily_pnl=0.0,
+            total_fees=0.0,
+            total_slippage=0.0,
+            total_funding=0.0,
+            drawdown=0.0,
+            max_equity=initial_capital,
+        )
 
 
 class BacktestEngine:
@@ -141,6 +187,9 @@ class BacktestEngine:
 
         # Order ID counter
         self._order_id = 0
+
+        # Step counter for tracking simulation progress
+        self.current_step = 0
 
         # Callbacks
         self._on_fill: Optional[Callable] = None
@@ -246,6 +295,9 @@ class BacktestEngine:
 
         # Record history
         self._equity_history.append((self.state.timestamp, self.state.equity))
+
+        # Increment step counter
+        self.current_step += 1
 
         return self.state
 
@@ -567,5 +619,6 @@ class BacktestEngine:
         self._trade_history = []
         self._daily_returns = []
         self._order_id = 0
+        self.current_step = 0
         # Reset RNG to ensure reproducibility on re-runs
         self._rng = np.random.default_rng(self.config.random_seed)

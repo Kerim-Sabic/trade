@@ -1,0 +1,426 @@
+/**
+ * CryptoAI Desktop - Styles
+ *
+ * Dark theme optimized for trading applications
+ */
+
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #0f0f23;
+    --text-primary: #e8e8e8;
+    --text-secondary: #a0a0a0;
+    --accent-blue: #4a90d9;
+    --accent-green: #2ecc71;
+    --accent-red: #e74c3c;
+    --accent-orange: #f39c12;
+    --accent-purple: #9b59b6;
+    --border-color: #2d2d4a;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    -webkit-app-region: drag;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    font-size: 28px;
+}
+
+.logo h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg-tertiary);
+    border-radius: 20px;
+    -webkit-app-region: no-drag;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--text-secondary);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.running .status-dot {
+    background-color: var(--accent-green);
+}
+
+.status-indicator.stopped .status-dot {
+    background-color: var(--text-secondary);
+}
+
+.status-indicator.error .status-dot {
+    background-color: var(--accent-red);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 24px;
+    padding: 24px;
+}
+
+/* Control Panel */
+.control-panel {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.control-panel h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--accent-blue);
+}
+
+.env-status {
+    margin-bottom: 20px;
+    padding: 12px;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+.env-checking {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+}
+
+.env-status.success {
+    border-left: 3px solid var(--accent-green);
+}
+
+.env-status.error {
+    border-left: 3px solid var(--accent-red);
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.config-section {
+    margin-bottom: 24px;
+}
+
+.config-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.config-row label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.config-row select,
+.config-row input {
+    padding: 10px 12px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.config-row select:focus,
+.config-row input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.config-row select {
+    cursor: pointer;
+}
+
+/* Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-start {
+    background-color: var(--accent-green);
+    color: white;
+}
+
+.btn-start:hover:not(:disabled) {
+    background-color: #27ae60;
+    transform: translateY(-1px);
+}
+
+.btn-stop {
+    background-color: var(--accent-blue);
+    color: white;
+}
+
+.btn-stop:hover:not(:disabled) {
+    background-color: #3a7bc8;
+    transform: translateY(-1px);
+}
+
+.btn-emergency {
+    background-color: var(--accent-red);
+    color: white;
+}
+
+.btn-emergency:hover:not(:disabled) {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.btn-small:hover {
+    background-color: var(--border-color);
+}
+
+.btn-secondary {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.btn-danger {
+    background-color: var(--accent-red);
+    color: white;
+}
+
+/* Log Panel */
+.log-panel {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.log-header h2 {
+    font-size: 18px;
+    color: var(--accent-blue);
+}
+
+.log-container {
+    flex: 1;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(100vh - 300px);
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+}
+
+.log-entry {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: var(--text-secondary);
+    margin-right: 12px;
+}
+
+.log-info .log-message {
+    color: var(--text-primary);
+}
+
+.log-error .log-message {
+    color: var(--accent-red);
+}
+
+.log-warning .log-message {
+    color: var(--accent-orange);
+}
+
+.log-success .log-message {
+    color: var(--accent-green);
+}
+
+/* Footer */
+.app-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.warning-text {
+    color: var(--accent-orange);
+}
+
+/* Dialog */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dialog h3 {
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.dialog p {
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .control-panel {
+        order: -1;
+    }
+
+    .log-container {
+        max-height: 300px;
+    }
+}
