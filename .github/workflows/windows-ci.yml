@@ -70,7 +70,74 @@ jobs:
           python -c "from cryptoai.training import DDPConfig; print('Training: OK')"
           python -c "from cryptoai.backtesting import BacktestEngine; print('Backtesting: OK')"
           python -c "from cryptoai.risk_engine import RiskController; print('Risk Engine: OK')"
+          python -c "from cryptoai.risk_engine import CVaRPositionSizer, create_cvar_position_sizer; print('CVaR Position Sizer: OK')"
+          python -c "from cryptoai.data_universe.price_feed import create_price_feed, SyncPriceFeed; print('Price Feed: OK')"
+          python -c "from cryptoai.execution.exchange_client import BinanceClient, OKXClient, BybitClient; print('Exchange Clients: OK')"
         shell: pwsh
+
+      - name: Test CVaR Risk Engine
+        run: |
+          python -c "
+          import torch
+          from cryptoai.risk_engine import CVaRCalculator, DynamicDrawdownManager, InactionThreshold, ActionDecision
+
+          # Test CVaR Calculator
+          calc = CVaRCalculator()
+          for i in range(100):
+              calc.update(-0.01 + 0.02 * (i % 10) / 10)
+          metrics = calc.calculate()
+          print(f'CVaR 95: {metrics.cvar_95:.4f}')
+          print(f'VaR 99: {metrics.var_99:.4f}')
+
+          # Test Drawdown Manager
+          dm = DynamicDrawdownManager()
+          dd, action, reason = dm.update(100000)
+          assert action == ActionDecision.TRADE, 'Should allow trading at start'
+          dd, action, reason = dm.update(85000)  # 15% drawdown
+          assert action == ActionDecision.FLATTEN or action == ActionDecision.REDUCE, 'Should reduce at high drawdown'
+          print(f'Drawdown Manager: {action.value} - {reason}')
+
+          # Test Inaction Threshold
+          thresh = InactionThreshold()
+          should_act, reason = thresh.should_act(confidence=0.8, uncertainty=0.1, expected_return=0.005)
+          assert should_act, 'Should act with high confidence'
+          should_act, reason = thresh.should_act(confidence=0.3, uncertainty=0.1, expected_return=0.005)
+          assert not should_act, 'Should not act with low confidence'
+
+          print('CVaR Risk Engine: PASSED')
+          "
+        shell: pwsh
+
+      - name: Test Real Price Feed API
+        run: |
+          python -c "
+          import asyncio
+          from cryptoai.data_universe.price_feed import BinancePublicPriceFeed, PriceFeedConfig, PriceFeedProvider
+
+          async def test_price_feed():
+              config = PriceFeedConfig(
+                  provider=PriceFeedProvider.BINANCE_PUBLIC,
+                  symbols=['BTCUSDT'],
+                  timeout_seconds=10.0
+              )
+              feed = BinancePublicPriceFeed(config)
+              await feed.connect()
+              try:
+                  price = await feed.get_price('BTCUSDT')
+                  if price and price.price > 0:
+                      print(f'Real-time BTC price: USD {price.price:,.2f}')
+                      print(f'24h Change: {price.change_24h:.2f}%')
+                      print('Price feed integration: PASSED')
+                  else:
+                      print('Warning: Could not fetch real price (may be rate limited)')
+              finally:
+                  await feed.disconnect()
+
+          asyncio.run(test_price_feed())
+          "
+        shell: pwsh
+        timeout-minutes: 2
+        continue-on-error: true
 
       - name: Run Backtest Validation
         run: |
