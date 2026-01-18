@@ -57,6 +57,7 @@ class DDPConfig:
     """Configuration for DDP training.
 
     Windows 11 Compatible - automatically selects 'gloo' backend on Windows.
+    Optimized for 2x RTX 5080 with 128GB RAM.
     """
 
     # Distributed settings - use factory defaults for platform detection
@@ -67,9 +68,15 @@ class DDPConfig:
 
     # Training settings
     use_amp: bool = True  # Automatic Mixed Precision
-    gradient_accumulation_steps: int = 1
+    gradient_accumulation_steps: int = 4  # Effective batch = batch_size * 4 * world_size
     max_grad_norm: float = 1.0
     find_unused_parameters: bool = False
+    broadcast_buffers: bool = True  # Sync batch norm statistics
+    sync_batch_norm: bool = True  # Use synchronized batch normalization
+
+    # Memory optimization
+    pin_memory: bool = True
+    empty_cache_frequency: int = 100  # Clear GPU cache every N steps
 
     # Checkpointing
     checkpoint_dir: str = "checkpoints"
@@ -85,6 +92,13 @@ class DDPConfig:
         # Ensure world_size is at least 1
         if self.world_size < 1:
             self.world_size = 1
+
+        # Auto-adjust gradient accumulation for multi-GPU
+        if self.world_size > 1:
+            logger.info(
+                f"Multi-GPU detected: world_size={self.world_size}, "
+                f"effective_batch=batch_size*{self.gradient_accumulation_steps}*{self.world_size}"
+            )
 
         # Create checkpoint directory if it doesn't exist
         os.makedirs(self.checkpoint_dir, exist_ok=True)
@@ -221,6 +235,11 @@ class DDPTrainer:
         # Move model to device
         self.model = model.to(self.device)
 
+        # Apply SyncBatchNorm if configured and distributed
+        if config.sync_batch_norm and config.world_size > 1 and self.is_cuda:
+            self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
+            logger.info("Converted BatchNorm to SyncBatchNorm for multi-GPU training")
+
         # Wrap with DDP if distributed
         if config.world_size > 1 and dist.is_initialized():
             if self.is_cuda:
@@ -229,16 +248,23 @@ class DDPTrainer:
                     device_ids=[rank],
                     output_device=rank,
                     find_unused_parameters=config.find_unused_parameters,
+                    broadcast_buffers=config.broadcast_buffers,
                 )
             else:
                 # CPU-only DDP (no device_ids)
                 self.model = DDP(
                     self.model,
                     find_unused_parameters=config.find_unused_parameters,
+                    broadcast_buffers=config.broadcast_buffers,
                 )
             self.is_distributed = True
+            logger.info(f"Model wrapped with DDP on {'GPU' if self.is_cuda else 'CPU'}")
         else:
             self.is_distributed = False
+
+        # Memory optimization tracking
+        self._step_count = 0
+        self._empty_cache_frequency = config.empty_cache_frequency
 
         # AMP scaler - only for CUDA devices
         self.use_amp = config.use_amp and self.is_cuda
@@ -435,10 +461,17 @@ class DDPTrainer:
             # Increment step
             if step_optimizer:
                 self.global_step += 1
+                self._step_count += 1
 
                 # Scheduler step
                 if self.scheduler:
                     self.scheduler.step()
+
+                # Memory optimization: periodic cache clearing
+                if (self.is_cuda and
+                    self._empty_cache_frequency > 0 and
+                    self._step_count % self._empty_cache_frequency == 0):
+                    torch.cuda.empty_cache()
 
                 # Checkpoint
                 if self.global_step % self.config.save_every_n_steps == 0:

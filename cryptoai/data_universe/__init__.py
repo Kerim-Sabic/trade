@@ -18,6 +18,12 @@ from cryptoai.data_universe.onchain.flows import OnChainFlowProcessor
 from cryptoai.data_universe.events.processor import EventProcessor
 from cryptoai.data_universe.asset_registry.registry import AssetRegistry
 from cryptoai.data_universe.aggregator import DataAggregator
+from cryptoai.data_universe.multi_resolution import (
+    MultiResolutionProcessor,
+    MultiResolutionEncoder,
+    MultiResolutionConfig,
+    create_multi_resolution_processor,
+)
 
 __all__ = [
     "DataSource",
@@ -31,4 +37,9 @@ __all__ = [
     "EventProcessor",
     "AssetRegistry",
     "DataAggregator",
+    # Multi-resolution processing
+    "MultiResolutionProcessor",
+    "MultiResolutionEncoder",
+    "MultiResolutionConfig",
+    "create_multi_resolution_processor",
 ]

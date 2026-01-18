@@ -19,6 +19,22 @@ hardware:
   ram_limit_gb: 120
   use_ddp: true
   use_amp: true
+  ddp_backend: "gloo"  # Required for Windows 11 (NCCL is Linux-only)
+
+  # Multi-GPU Training Optimization
+  multi_gpu:
+    world_size: 2  # Number of GPUs
+    gradient_accumulation_steps: 4  # Effective batch = batch_size * 4 * 2 GPUs
+    find_unused_parameters: false
+    broadcast_buffers: true
+    sync_batch_norm: true  # Synchronize batch norm across GPUs
+
+  # Memory Optimization for RTX 5080 (16GB VRAM per GPU)
+  memory:
+    pin_memory: true
+    prefetch_factor: 4
+    persistent_workers: true
+    empty_cache_frequency: 100  # Clear cache every N batches
 
 # Data Universe Configuration
 data_universe:
@@ -305,14 +321,24 @@ backtesting:
 
 # Training Configuration
 training:
-  # Offline Training
+  # Offline Training (Optimized for 2x RTX 5080, 128GB RAM)
   offline:
-    batch_size: 256
-    learning_rate: 0.0001
+    # Per-GPU batch size (effective = batch_size * gradient_accumulation * world_size)
+    # With batch_size=64, gradient_accumulation=4, world_size=2: effective_batch=512
+    batch_size: 64
+    effective_batch_size: 512  # Documentation: 64 * 4 * 2 = 512
+    learning_rate: 0.0003  # Scaled for larger effective batch
     weight_decay: 0.01
     epochs: 100
-    warmup_steps: 1000
+    warmup_steps: 2000  # Increased for larger batch
     gradient_clip: 1.0
+
+  # Multi-Resolution Training (15min/1h/4h candle horizons)
+  multi_resolution:
+    enabled: true
+    resolutions: ["1m", "5m", "15m", "1h", "4h"]
+    downsampling_method: "ohlcv_aggregate"  # Options: ohlcv_aggregate, last, mean
+    feature_fusion: "concat"  # Options: concat, attention, hierarchical
 
   # Online Adaptation
   online:
