@@ -45,13 +45,22 @@ class TestBacktestState:
 
     def test_initial_state(self):
         """Test initial state values."""
-        state = BacktestState(initial_capital=100000.0)
+        state = BacktestState.create(initial_capital=100000.0)
 
-        assert state.cash == 100000.0
+        assert state.cash == 100000.0  # Using cash alias
+        assert state.capital == 100000.0
         assert state.equity == 100000.0
         assert state.drawdown == 0.0
         assert len(state.positions) == 0
         assert len(state.filled_orders) == 0
+
+    def test_cash_alias(self):
+        """Test that cash is an alias for capital."""
+        state = BacktestState.create(initial_capital=50000.0)
+
+        assert state.cash == state.capital
+        state.capital = 75000.0
+        assert state.cash == 75000.0
 
 
 class TestBacktestEngine:

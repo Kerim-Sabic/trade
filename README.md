@@ -1,386 +1,265 @@
-# CryptoAI - Autonomous Crypto Trading Intelligence
+# CryptoAI Trading Platform
 
-**Version 0.2.0** | **Windows 11 First** | **Production-Grade ML Trading System**
+**Production-Grade ML Crypto Trading System for Windows 11**
 
----
-
-## Overview
-
-CryptoAI is a professional-grade, ML-driven cryptocurrency trading system designed with Windows 11 as the primary target platform. It features:
-
-- **Deep Reinforcement Learning** - SAC/PPO policy networks with online adaptation
-- **Market State Encoders** - Transformer-based encoding of price, volume, and order flow
-- **Regime Detection** - Automatic detection of market regimes (trending, ranging, volatile)
-- **Risk Management** - Multi-layer kill switches and drawdown protection
-- **Desktop Application** - Electron-based GUI with one-click trading controls
-
----
-
-## System Requirements
-
-### Minimum Requirements (Windows 11)
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| **OS** | Windows 11 x64 | Windows 11 22H2+ |
-| **Python** | 3.10 | 3.11 |
-| **RAM** | 16 GB | 32 GB |
-| **CPU** | 4 cores | 8+ cores |
-| **Storage** | 10 GB | 50 GB SSD |
-| **GPU** | None (CPU mode) | NVIDIA RTX 3060+ (8GB VRAM) |
-
-### GPU Support (Optional)
-
-For GPU acceleration:
-- NVIDIA GPU with 8GB+ VRAM
-- CUDA 12.1+ from [NVIDIA](https://developer.nvidia.com/cuda-downloads)
-- cuDNN 8.9+
+A professional machine learning system for cryptocurrency trading with institutional-grade risk management, walk-forward validation, and regime-aware decision making.
 
 ---
 
 ## Quick Start (5 Minutes)
 
-### Option 1: Desktop App (Recommended for Windows)
+### Prerequisites (Windows 11)
+
+- **Windows 11 x64** (Windows 10 also supported)
+- **Python 3.9, 3.10, or 3.11** (3.11 recommended)
+- **Git** (optional, for cloning)
+- **Node.js 18+** (only for Electron desktop app)
+
+### Step 1: Install Python
+
+1. Download Python from [python.org](https://www.python.org/downloads/)
+2. **IMPORTANT**: Check "Add Python to PATH" during installation
+3. Verify installation:
+   ```powershell
+   python --version
+   # Should show: Python 3.11.x (or 3.9.x/3.10.x)
+   ```
+
+### Step 2: Clone or Download
 
 ```powershell
-# 1. Clone the repository
+# Option A: Clone with Git
 git clone https://github.com/Kerim-Sabic/trade.git
 cd trade
 
-# 2. Install Python backend first (see Option 2, steps 4-6)
-
-# 3. Build the desktop app
-cd electron-app
-npm install
-npm run build:win
-
-# 4. Run the installer from electron-app/dist/
-# Look for: CryptoAI Desktop Setup 0.2.0.exe
-
-# 5. Launch from Start Menu or Desktop shortcut
-# 6. Configure Python path in Settings (Ctrl+,)
-# 7. Click "Start Trading" in Shadow Mode
+# Option B: Download ZIP and extract, then cd into directory
 ```
 
-### Option 2: Command Line Installation
+### Step 3: Install Dependencies
 
 ```powershell
-# 1. Install Python 3.11 from python.org
-# Download from: https://www.python.org/downloads/release/python-3119/
-# IMPORTANT: Check "Add Python to PATH" during installation
+# Upgrade pip
+python -m pip install --upgrade pip setuptools wheel
 
-# 2. Open PowerShell and verify Python
-python --version
-# Should show: Python 3.11.x
+# Install PyTorch (CPU-only, fastest)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-# 3. Clone the repository
-git clone https://github.com/Kerim-Sabic/trade.git
-cd trade
-
-# 4. Create virtual environment
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-
-# 5. Install PyTorch (CPU version for quick start)
-pip install torch torchvision torchaudio
-
-# 6. Install CryptoAI
+# Install CryptoAI
 pip install -e .
-
-# 7. Run in Shadow Mode (safe simulation)
-python -m cryptoai.main --mode shadow --assets BTCUSDT
 ```
 
-### Option 3: GPU Installation
+### Step 4: Verify Installation
 
 ```powershell
-# After step 4 above, install PyTorch with CUDA support:
+python -c "from cryptoai import __version__; print(f'CryptoAI {__version__} installed successfully')"
+```
+
+### Step 5: Run Tests
+
+```powershell
+python -m pytest tests/ -v --timeout=120
+```
+
+### Step 6: Run Paper Trading
+
+```powershell
+python -m cryptoai.cli run --mode paper --config configs/default.yaml --asset BTCUSDT
+```
+
+---
+
+## System Requirements
+
+### Minimum Requirements
+
+| Component | Requirement |
+|-----------|------------|
+| OS | Windows 10/11 x64 |
+| CPU | 4 cores |
+| RAM | 8 GB |
+| Storage | 10 GB SSD |
+| Python | 3.9, 3.10, or 3.11 |
+
+### Recommended Requirements
+
+| Component | Recommendation |
+|-----------|---------------|
+| OS | Windows 11 x64 |
+| CPU | 8+ cores (AMD Ryzen / Intel Core i7+) |
+| RAM | 16-32 GB |
+| Storage | 50+ GB NVMe SSD |
+| GPU | NVIDIA RTX 3060+ (optional, for training) |
+| Python | 3.11 |
+
+---
+
+## Installation Options
+
+### Option 1: CPU-Only (Default, Recommended)
+
+Best for inference and paper trading:
+
+```powershell
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install -e .
+```
+
+### Option 2: NVIDIA GPU (CUDA) Support
+
+For training and faster inference:
+
+```powershell
+# Check your CUDA version
+nvidia-smi
+
+# Install PyTorch with CUDA 12.1
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
-# Then continue with step 6
+# Or CUDA 11.8
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
 pip install -e .
 ```
 
+### Option 3: Development Install
+
+For development with all tools:
+
+```powershell
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install -e ".[dev]"
+```
+
 ---
 
-## One-Command Operations
+## Running the System
 
-### Run Trading (Shadow Mode - Safe)
+### CLI Commands
+
 ```powershell
-python -m cryptoai.main --mode shadow --assets BTCUSDT ETHUSDT
+# Show help
+python -m cryptoai.cli --help
+
+# Run paper trading
+python -m cryptoai.cli run --mode paper --asset BTCUSDT
+
+# Run backtest
+python -m cryptoai.cli backtest --config configs/default.yaml --start 2024-01-01 --end 2024-06-30
+
+# Train model (requires GPU for reasonable speed)
+python -m cryptoai.cli train --config configs/training.yaml
 ```
 
-### Run Backtest
-```powershell
-python -m cryptoai.main --mode backtest --assets BTCUSDT
-```
+### Available Modes
 
-### Run Training
-```powershell
-python -m cryptoai.main --mode train --config configs/default.yaml
-```
+| Mode | Description |
+|------|-------------|
+| `paper` | Simulated trading with live market data |
+| `backtest` | Historical backtesting with walk-forward validation |
+| `shadow` | Live signals without execution (monitoring only) |
+| `live` | **DISABLED** - Real trading (requires additional safeguards) |
 
-### Run Tests
-```powershell
-pytest tests/ -v
-```
+---
 
-### Build Desktop App
+## Electron Desktop App
+
+### Build the Desktop App
+
 ```powershell
-cd electron-app
+cd electron
+
+# Install Node.js dependencies
 npm install
+
+# Run in development mode
+npm start
+
+# Build Windows installer (.exe)
 npm run build:win
 ```
 
----
+The installer will be in `electron/dist/CryptoAI-Setup-x.x.x.exe`
 
-## Execution Modes
+### Desktop App Features
 
-| Mode | Description | Risk Level | API Calls |
-|------|-------------|------------|-----------|
-| `shadow` | Pure simulation, no external calls | None | No |
-| `paper` | Exchange testnet trading | None | Testnet only |
-| `backtest` | Historical simulation | None | No |
-| `train` | Model training mode | None | No |
-| `live` | **REAL TRADING** | **HIGH** | **YES** |
-
-**WARNING**: Live mode uses REAL money. Only use after thorough testing.
-
----
-
-## Configuration
-
-### Environment Variables
-
-```powershell
-# Optional - Configure before running
-$env:CRYPTOAI_MODE = "shadow"           # Default mode
-$env:CRYPTOAI_EXCHANGE = "binance"      # Exchange selection
-$env:CUDA_VISIBLE_DEVICES = ""          # Disable GPU (CPU only)
-$env:CRYPTOAI_LOG_LEVEL = "INFO"        # Logging level
-```
-
-### Configuration File
-
-The main configuration is in `configs/default.yaml`. Key sections:
-
-```yaml
-# System settings
-system:
-  device: "auto"  # auto, cpu, cuda
-  precision: "amp"  # amp, fp32
-
-# Risk management (critical)
-risk_engine:
-  max_position_size: 0.1  # 10% of portfolio per position
-  max_leverage: 3
-  max_drawdown: 0.15  # 15% max drawdown before halt
-  kill_switches:
-    daily_loss_limit: 0.05
-    consecutive_losses: 5
-
-# Exchange (for live/paper modes)
-exchange:
-  type: "binance"
-  testnet: true  # Always true for paper mode
-  # API keys set via environment or .env file
-```
-
----
-
-## Desktop Application
-
-### Installation (Windows)
-
-```powershell
-# Build the installer locally
-cd electron-app
-npm install
-npm run build:win
-
-# The installer will be created at:
-# electron-app/dist/CryptoAI Desktop Setup 0.2.0.exe
-```
-
-1. Run the installer from `electron-app/dist/`
-2. Choose installation location (allows custom path)
-3. Launch from Start Menu -> CryptoAI -> CryptoAI Desktop
-
-### Features
-
-- **One-Click Trading** - Start/Stop with single button
-- **Kill Switch** - Emergency stop accessible via Ctrl+Shift+K
-- **Live Mode Protection** - Confirmation dialog for real trading
-- **Real-time Logs** - Python backend output visible in UI
-- **System Tray** - Minimize to tray, continue trading
-
-### Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+,` | Open Settings |
-| `Ctrl+Shift+K` | Emergency Kill Switch |
-| `Ctrl+Enter` | Start Trading |
-| `Ctrl+.` | Stop Trading |
-
-### Building from Source
-
-```powershell
-cd electron-app
-npm install
-npm run build:win
-# Output: electron-app/dist/CryptoAI-Desktop-Setup.exe
-```
-
----
-
-## Architecture
-
-```
-cryptoai/
-├── encoders/          # Neural network encoders
-│   ├── unified.py     # Combined state encoder
-│   ├── order_flow.py  # Microstructure encoder
-│   └── regime.py      # Market regime detection
-├── decision_engine/   # Policy and control
-│   ├── policy.py      # SAC/PPO networks
-│   └── meta_controller.py  # Regime-aware controller
-├── world_model/       # Market dynamics prediction
-├── black_swan/        # Anomaly detection
-├── risk_engine/       # Position and risk management
-├── backtesting/       # Event-driven simulation
-├── training/          # DDP training infrastructure
-├── execution/         # Exchange connectivity
-├── monitoring/        # Metrics and alerts
-└── main.py            # Entry point
-```
+- Start/Stop trading controls
+- Real-time activity log
+- Configuration management
+- Emergency kill switch (Ctrl+Shift+X)
+- Paper/Backtest mode selection
 
 ---
 
 ## Testing
 
 ### Run All Tests
+
 ```powershell
-pytest tests/ -v
+python -m pytest tests/ -v --timeout=120
 ```
 
 ### Run Specific Test Categories
+
 ```powershell
 # Unit tests only
-pytest tests/test_encoders.py tests/test_training.py -v
+python -m pytest tests/test_encoders.py tests/test_risk_engine.py -v
+
+# Integration tests
+python -m pytest tests/test_integration.py -v -m integration
+
+# Windows compatibility tests
+python -m pytest tests/test_windows_compat.py -v
 
 # Backtesting tests
-pytest tests/test_backtesting.py -v
-
-# Risk engine tests (critical)
-pytest tests/test_risk_engine.py -v
+python -m pytest tests/test_backtesting.py -v
 ```
 
-### Test Coverage
+### Test with Coverage
+
 ```powershell
-pytest tests/ --cov=cryptoai --cov-report=html
+pip install pytest-cov
+python -m pytest tests/ --cov=cryptoai --cov-report=html
 # Open htmlcov/index.html in browser
 ```
 
 ---
 
-## Common Windows Errors & Fixes
+## Configuration
 
-### Error: `torch not found`
-```powershell
-# Solution: Install PyTorch explicitly
-pip install torch torchvision torchaudio
+### Default Configuration
+
+Configuration files are in `configs/`:
+
+```yaml
+# configs/default.yaml
+model:
+  encoder_type: "unified"
+  state_dim: 256
+  action_dim: 4
+
+training:
+  batch_size: 64
+  learning_rate: 0.0001
+  epochs: 100
+
+risk:
+  max_position_pct: 0.20
+  max_drawdown: 0.15
+  max_daily_loss: 0.05
+
+execution:
+  mode: "paper"
+  slippage_model: "orderbook_depth"
 ```
 
-### Error: `ModuleNotFoundError: No module named 'cryptoai'`
-```powershell
-# Solution: Install in development mode
-pip install -e .
-```
+### Environment Variables
 
-### Error: `CUDA out of memory`
-```powershell
-# Solution: Use CPU mode
-$env:CUDA_VISIBLE_DEVICES = ""
-python -m cryptoai.main --mode shadow
-```
-
-### Error: `Permission denied` when writing files
-```powershell
-# Solution: Run PowerShell as Administrator or change install location
-```
-
-### Error: Electron app won't start
-```powershell
-# Solution: Verify Python path in Settings (Ctrl+,)
-# Default: python
-# If using venv: C:\path\to\venv\Scripts\python.exe
-```
-
-### Error: `DLL load failed` on Windows
-```powershell
-# Solution: Install Visual C++ Redistributable
-# Download from: https://aka.ms/vs/17/release/vc_redist.x64.exe
-```
-
-### Error: NCCL not available on Windows
-```
-# This is expected - Windows uses 'gloo' backend instead of 'nccl'
-# The system automatically detects and switches backends
-```
-
----
-
-## Risk Warnings
-
-1. **This is experimental software** - Use at your own risk
-2. **Cryptocurrency trading is highly risky** - You can lose all invested capital
-3. **Past performance does not guarantee future results**
-4. **Always start in Shadow Mode** - Test thoroughly before any real trading
-5. **Never invest more than you can afford to lose**
-
----
-
-## Development
-
-### Setting Up Development Environment
-```powershell
-# Clone and setup
-git clone https://github.com/Kerim-Sabic/trade.git
-cd trade
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-
-# Install with dev dependencies
-pip install torch torchvision torchaudio
-pip install -e ".[dev]"
-
-# Run tests
-pytest tests/ -v
-
-# Run linting
-ruff check cryptoai/
-
-# Run type checking
-mypy cryptoai/ --ignore-missing-imports
-```
-
-### Code Style
-- Python: Black formatter, Ruff linter
-- Type hints: Required for public APIs
-- Docstrings: Google style
-
----
-
-## CI/CD
-
-The project uses GitHub Actions for continuous integration on Windows:
-
-- **Python Tests**: Unit tests, integration tests, import validation
-- **Electron Build**: Windows installer (.exe) and portable builds
-- **Security Scan**: Bandit and Safety vulnerability checks
-
-See `.github/workflows/windows-ci.yml` for details.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CRYPTOAI_CONFIG` | Config file path | `configs/default.yaml` |
+| `CRYPTOAI_LOG_LEVEL` | Logging level | `INFO` |
+| `CUDA_VISIBLE_DEVICES` | GPU selection | (all GPUs) |
+| `CRYPTOAI_TEST_MODE` | Enable test mode | `false` |
 
 ---
 
@@ -388,33 +267,178 @@ See `.github/workflows/windows-ci.yml` for details.
 
 ```
 trade/
-├── cryptoai/              # Main Python package
-├── configs/               # Configuration files
-├── electron-app/          # Desktop application
-├── tests/                 # Test suite
-├── docker/                # Docker configuration
-├── scripts/               # Utility scripts
-├── .github/workflows/     # CI/CD pipelines
-├── pyproject.toml         # Python package config
-├── LICENSE                # MIT License
-└── README.md              # This file
+├── cryptoai/                    # Main Python package
+│   ├── encoders/                # State encoders (transformers, CNNs)
+│   ├── decision_engine/         # Policy networks, reward functions
+│   ├── world_model/             # Predictive models
+│   ├── black_swan/              # Anomaly detection, tail risk
+│   ├── risk_engine/             # Position sizing, kill switch
+│   ├── training/                # DDP training, data loading
+│   ├── backtesting/             # Walk-forward validation
+│   ├── execution/               # Order execution (paper/live)
+│   └── utils/                   # Config, device, logging
+├── electron/                    # Electron desktop app
+│   ├── src/
+│   │   ├── main.js              # Main process
+│   │   ├── preload.js           # IPC bridge
+│   │   ├── index.html           # UI
+│   │   └── renderer.js          # Frontend logic
+│   └── package.json
+├── configs/                     # YAML configurations
+├── tests/                       # Test suite
+├── pyproject.toml               # Python project config
+└── README.md                    # This file
 ```
+
+---
+
+## ML/Trading Architecture
+
+### Core Components
+
+1. **Unified Market Encoder**: Processes OHLCV, order flow, and regime features
+2. **Regime Detector**: Classifies market conditions (trending, ranging, volatile, crisis)
+3. **Conservative Policy**: Risk-aware action selection with uncertainty estimation
+4. **Black Swan Detector**: Anomaly detection using VAE and isolation forests
+5. **Risk Controller**: Position limits, drawdown monitoring, kill switch
+
+### Backtesting Standards
+
+The system implements **professional-grade backtesting** that avoids common pitfalls:
+
+- **Walk-Forward Validation**: Train on past, test on future with embargo periods
+- **Regime-Aware Splits**: Ensures training covers different market conditions
+- **Realistic Execution**: Orderbook-based slippage, latency, partial fills
+- **Monte Carlo Significance**: Statistical validation of results
+- **No Lookahead Bias**: Strict temporal ordering enforced
+
+### Why Naive Backtests Lie
+
+Common backtesting mistakes this system avoids:
+
+1. **Lookahead Bias**: Using future information for past decisions
+2. **Survivorship Bias**: Only testing on assets that still exist
+3. **Regime Ignorance**: Testing only in favorable conditions
+4. **Transaction Cost Fantasy**: Fixed slippage assumptions
+5. **Data Leakage**: Train/test contamination
+6. **Overfitting to Noise**: Too many parameters, no validation
+
+### Risk Management
+
+- Maximum position size: 20% of capital per asset
+- Maximum leverage: 3x
+- Maximum daily loss: 5%
+- Maximum drawdown: 15-20%
+- Automatic position liquidation on kill switch
+
+---
+
+## Common Issues & Solutions
+
+### Python Not Found
+
+```
+'python' is not recognized as an internal or external command
+```
+
+**Solution**: Reinstall Python and check "Add Python to PATH", or use full path:
+```powershell
+C:\Users\YourName\AppData\Local\Programs\Python\Python311\python.exe --version
+```
+
+### PyTorch Installation Fails
+
+**Solution**: Install Visual C++ Redistributable:
+- Download from: https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+### Import Error: No module named 'cryptoai'
+
+**Solution**: Run from the repository root and ensure pip install completed:
+```powershell
+cd C:\path\to\trade
+pip install -e .
+```
+
+### CUDA Out of Memory
+
+**Solution**: Reduce batch size or use CPU:
+```yaml
+# In config file
+training:
+  batch_size: 16  # Reduce from 64
+```
+
+Or force CPU:
+```powershell
+$env:CUDA_VISIBLE_DEVICES=""
+python -m cryptoai.cli run ...
+```
+
+### Electron App Won't Start
+
+**Solution**: Check Node.js version and reinstall dependencies:
+```powershell
+node --version  # Should be 18+
+cd electron
+Remove-Item -Recurse -Force node_modules
+npm install
+npm start
+```
+
+### Tests Timeout
+
+**Solution**: Increase timeout or skip slow tests:
+```powershell
+python -m pytest tests/ -v --timeout=300
+# Or skip slow tests
+python -m pytest tests/ -v -m "not slow"
+```
+
+### NCCL Not Available on Windows
+
+This is expected - Windows uses the `gloo` backend instead of `nccl`.
+The system automatically detects Windows and switches to the correct backend.
+
+---
+
+## Risk Disclaimer
+
+**IMPORTANT**: This software is for educational and research purposes only.
+
+- Trading cryptocurrencies involves substantial risk of loss
+- Past performance does not guarantee future results
+- The authors are not responsible for any financial losses
+- Always test thoroughly in paper mode before any real trading
+- Never invest more than you can afford to lose
+
+---
+
+## Known Limitations
+
+1. **Live Trading Disabled**: The `live` mode requires additional API credentials and safeguards not included in this release
+2. **Data Sources**: Synthetic data is used for testing; real data integration requires exchange API setup
+3. **Training Time**: Full model training requires GPU and substantial time (hours to days)
+4. **Windows Only**: While the code is cross-platform compatible, testing and CI are Windows-focused
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make changes and add tests
+4. Run tests: `python -m pytest tests/ -v`
+5. Submit a pull request
 
 ---
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License - See LICENSE file for details.
 
 ---
 
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/Kerim-Sabic/trade/issues)
-- **Documentation**: This README and inline code documentation
-
----
-
-## Disclaimer
-
-This software is provided for educational and research purposes only. The authors and contributors are not responsible for any financial losses incurred through the use of this software. Cryptocurrency trading involves substantial risk of loss. **USE AT YOUR OWN RISK.**
+- **Documentation**: This README and inline docstrings

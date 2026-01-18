@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+    <title>CryptoAI Trading Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">&#x1F4CA;</span>
+                <h1>CryptoAI Trading</h1>
+            </div>
+            <div class="status-indicator" id="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Initializing...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Control Panel -->
+            <section class="control-panel">
+                <h2>Trading Controls</h2>
+
+                <!-- Environment Status -->
+                <div class="env-status" id="env-status">
+                    <div class="env-checking">
+                        <span class="spinner"></span>
+                        Checking environment...
+                    </div>
+                </div>
+
+                <!-- Configuration -->
+                <div class="config-section">
+                    <div class="config-row">
+                        <label for="asset-select">Asset:</label>
+                        <select id="asset-select">
+                            <option value="BTCUSDT">BTC/USDT</option>
+                            <option value="ETHUSDT">ETH/USDT</option>
+                            <option value="BNBUSDT">BNB/USDT</option>
+                            <option value="SOLUSDT">SOL/USDT</option>
+                        </select>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="mode-select">Mode:</label>
+                        <select id="mode-select">
+                            <option value="paper">Paper Trading</option>
+                            <option value="backtest">Backtest</option>
+                            <option value="live" disabled>Live (Disabled)</option>
+                        </select>
+                    </div>
+
+                    <div class="config-row">
+                        <label for="config-file">Config:</label>
+                        <input type="text" id="config-file" readonly placeholder="configs/default.yaml">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="btn-start" class="btn btn-start" disabled>
+                        <span class="btn-icon">&#x25B6;</span>
+                        Start Trading
+                    </button>
+                    <button id="btn-stop" class="btn btn-stop" disabled>
+                        <span class="btn-icon">&#x23F9;</span>
+                        Stop Trading
+                    </button>
+                    <button id="btn-emergency" class="btn btn-emergency">
+                        <span class="btn-icon">&#x26A0;</span>
+                        Emergency Stop
+                    </button>
+                </div>
+            </section>
+
+            <!-- Log Panel -->
+            <section class="log-panel">
+                <div class="log-header">
+                    <h2>Activity Log</h2>
+                    <button id="btn-clear-log" class="btn btn-small">Clear</button>
+                </div>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry log-info">
+                        <span class="log-time">[--:--:--]</span>
+                        <span class="log-message">Welcome to CryptoAI Trading Platform</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-left">
+                <span id="platform-info"></span>
+            </div>
+            <div class="footer-right">
+                <span class="warning-text">Risk Warning: Trading involves significant risk of loss</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div class="dialog-overlay" id="dialog-overlay" style="display: none;">
+        <div class="dialog">
+            <h3 id="dialog-title">Confirm Action</h3>
+            <p id="dialog-message">Are you sure you want to proceed?</p>
+            <div class="dialog-buttons">
+                <button id="dialog-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="dialog-confirm" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

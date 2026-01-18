@@ -113,22 +113,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: electron-app/package-lock.json
+          cache-dependency-path: electron/package-lock.json
 
       - name: Install Electron Dependencies
-        working-directory: electron-app
+        working-directory: electron
         run: npm ci
         shell: pwsh
 
       - name: Build Windows Installer
-        working-directory: electron-app
+        working-directory: electron
         run: npm run build:win
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List Build Artifacts
-        working-directory: electron-app
+        working-directory: electron
         run: |
           Get-ChildItem -Path dist -Recurse | Format-Table Name, Length
         shell: pwsh
@@ -138,8 +138,8 @@ jobs:
         with:
           name: cryptoai-windows-installer
           path: |
-            electron-app/dist/*.exe
-            electron-app/dist/*.msi
+            electron/dist/*.exe
+            electron/dist/*.msi
           if-no-files-found: warn
           retention-days: 14
 
@@ -147,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cryptoai-windows-portable
-          path: electron-app/dist/*portable*.exe
+          path: electron/dist/*portable*.exe
           if-no-files-found: warn
           retention-days: 14
 
