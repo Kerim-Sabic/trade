@@ -454,7 +454,246 @@ async function checkEnvironment() {
     }
 }
 
+// ============================================================================
+// Simulation Mode - Real Price Feed Integration
+// ============================================================================
+
+let simulationInterval = null;
+let simulationState = {
+    running: false,
+    symbol: 'BTCUSDT',
+    lastPrice: 0,
+    entryPrice: 0,
+    position: 0,  // 0 = none, 1 = long, -1 = short
+    pnl: 0,
+    trades: 0,
+};
+
+/**
+ * Fetch real-time price from Binance public API (no key required)
+ */
+async function fetchRealPrice(symbol) {
+    const https = require('https');
+
+    return new Promise((resolve, reject) => {
+        const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`;
+
+        https.get(url, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    resolve({
+                        symbol: parsed.symbol,
+                        price: parseFloat(parsed.lastPrice),
+                        change24h: parseFloat(parsed.priceChangePercent),
+                        high24h: parseFloat(parsed.highPrice),
+                        low24h: parseFloat(parsed.lowPrice),
+                        volume24h: parseFloat(parsed.quoteVolume),
+                        timestamp: new Date().toISOString(),
+                    });
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }).on('error', reject);
+    });
+}
+
+/**
+ * Simple AI signal generator for simulation (mock prediction)
+ * In production, this would call the actual ML model
+ */
+function generateSimulationSignal(priceHistory) {
+    if (priceHistory.length < 5) {
+        return { signal: 'HOLD', confidence: 0.5, reason: 'Insufficient data' };
+    }
+
+    // Simple momentum-based signal for demo
+    const recent = priceHistory.slice(-5);
+    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const current = recent[recent.length - 1];
+    const momentum = (current - avg) / avg;
+
+    // Add some randomness to simulate uncertainty
+    const noise = (Math.random() - 0.5) * 0.01;
+    const adjustedMomentum = momentum + noise;
+
+    if (adjustedMomentum > 0.005) {
+        return {
+            signal: 'LONG',
+            confidence: Math.min(0.95, 0.6 + Math.abs(adjustedMomentum) * 10),
+            reason: 'Bullish momentum detected',
+        };
+    } else if (adjustedMomentum < -0.005) {
+        return {
+            signal: 'SHORT',
+            confidence: Math.min(0.95, 0.6 + Math.abs(adjustedMomentum) * 10),
+            reason: 'Bearish momentum detected',
+        };
+    }
+
+    return {
+        signal: 'HOLD',
+        confidence: 0.5 + Math.random() * 0.2,
+        reason: 'No clear signal',
+    };
+}
+
+/**
+ * Start simulation with real price feed
+ */
+async function startSimulation(config) {
+    if (simulationInterval) {
+        return { success: false, error: 'Simulation already running' };
+    }
+
+    const symbol = config.symbol || 'BTCUSDT';
+    const priceHistory = [];
+
+    simulationState = {
+        running: true,
+        symbol,
+        lastPrice: 0,
+        entryPrice: 0,
+        position: 0,
+        pnl: 0,
+        trades: 0,
+    };
+
+    log.info(`Starting simulation for ${symbol}`);
+    mainWindow.webContents.send('trading-log', {
+        type: 'info',
+        message: `Simulation started for ${symbol} with REAL price feed`,
+    });
+
+    // Fetch initial price
+    try {
+        const initialPrice = await fetchRealPrice(symbol);
+        simulationState.lastPrice = initialPrice.price;
+        priceHistory.push(initialPrice.price);
+
+        mainWindow.webContents.send('price-update', initialPrice);
+        mainWindow.webContents.send('trading-log', {
+            type: 'info',
+            message: `Initial price: $${initialPrice.price.toLocaleString()}`,
+        });
+    } catch (e) {
+        log.error(`Failed to fetch initial price: ${e.message}`);
+        return { success: false, error: e.message };
+    }
+
+    // Start price polling interval (every 5 seconds)
+    simulationInterval = setInterval(async () => {
+        try {
+            const priceData = await fetchRealPrice(symbol);
+            const currentPrice = priceData.price;
+
+            priceHistory.push(currentPrice);
+            if (priceHistory.length > 100) {
+                priceHistory.shift();
+            }
+
+            simulationState.lastPrice = currentPrice;
+
+            // Send price update to renderer
+            mainWindow.webContents.send('price-update', priceData);
+
+            // Generate AI signal
+            const signalData = generateSimulationSignal(priceHistory);
+            mainWindow.webContents.send('simulation-signal', signalData);
+
+            // Simulate trades based on signals
+            if (signalData.signal === 'LONG' && simulationState.position <= 0) {
+                // Close short if any, open long
+                if (simulationState.position < 0 && simulationState.entryPrice > 0) {
+                    const closePnl = (simulationState.entryPrice - currentPrice) * 0.001; // 0.001 BTC
+                    simulationState.pnl += closePnl;
+                    mainWindow.webContents.send('trading-log', {
+                        type: 'trade',
+                        message: `[SIM] Closed SHORT at $${currentPrice.toLocaleString()} | PnL: ${closePnl >= 0 ? '+' : ''}$${closePnl.toFixed(2)}`,
+                    });
+                }
+                simulationState.position = 1;
+                simulationState.entryPrice = currentPrice;
+                simulationState.trades++;
+                mainWindow.webContents.send('trading-log', {
+                    type: 'trade',
+                    message: `[SIM] Opened LONG at $${currentPrice.toLocaleString()} (Confidence: ${(signalData.confidence * 100).toFixed(1)}%)`,
+                });
+            } else if (signalData.signal === 'SHORT' && simulationState.position >= 0) {
+                // Close long if any, open short
+                if (simulationState.position > 0 && simulationState.entryPrice > 0) {
+                    const closePnl = (currentPrice - simulationState.entryPrice) * 0.001;
+                    simulationState.pnl += closePnl;
+                    mainWindow.webContents.send('trading-log', {
+                        type: 'trade',
+                        message: `[SIM] Closed LONG at $${currentPrice.toLocaleString()} | PnL: ${closePnl >= 0 ? '+' : ''}$${closePnl.toFixed(2)}`,
+                    });
+                }
+                simulationState.position = -1;
+                simulationState.entryPrice = currentPrice;
+                simulationState.trades++;
+                mainWindow.webContents.send('trading-log', {
+                    type: 'trade',
+                    message: `[SIM] Opened SHORT at $${currentPrice.toLocaleString()} (Confidence: ${(signalData.confidence * 100).toFixed(1)}%)`,
+                });
+            }
+
+            // Calculate unrealized PnL
+            let unrealizedPnl = 0;
+            if (simulationState.position !== 0 && simulationState.entryPrice > 0) {
+                if (simulationState.position > 0) {
+                    unrealizedPnl = (currentPrice - simulationState.entryPrice) * 0.001;
+                } else {
+                    unrealizedPnl = (simulationState.entryPrice - currentPrice) * 0.001;
+                }
+            }
+
+            mainWindow.webContents.send('simulation-pnl', {
+                realized: simulationState.pnl,
+                unrealized: unrealizedPnl,
+                total: simulationState.pnl + unrealizedPnl,
+                trades: simulationState.trades,
+                position: simulationState.position,
+            });
+
+        } catch (e) {
+            log.error(`Price fetch error: ${e.message}`);
+            mainWindow.webContents.send('trading-log', {
+                type: 'error',
+                message: `Price fetch error: ${e.message}`,
+            });
+        }
+    }, 5000); // 5 second interval
+
+    return { success: true };
+}
+
+/**
+ * Stop simulation
+ */
+function stopSimulation() {
+    if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+    }
+    simulationState.running = false;
+
+    log.info('Simulation stopped');
+    mainWindow.webContents.send('trading-log', {
+        type: 'info',
+        message: `Simulation stopped. Total PnL: $${simulationState.pnl.toFixed(2)} | Trades: ${simulationState.trades}`,
+    });
+
+    return { success: true, finalPnl: simulationState.pnl, trades: simulationState.trades };
+}
+
+// ============================================================================
 // IPC Handlers
+// ============================================================================
+
 ipcMain.handle('start-trading', async (event, config) => {
     return await startTrading(config);
 });
@@ -489,6 +728,26 @@ ipcMain.handle('set-config', (event, config) => {
         store.set(key, value);
     });
     return { success: true };
+});
+
+// Simulation handlers
+ipcMain.handle('start-simulation', async (event, config) => {
+    return await startSimulation(config);
+});
+
+ipcMain.handle('stop-simulation', () => {
+    return stopSimulation();
+});
+
+ipcMain.handle('get-simulation-status', () => {
+    return {
+        running: simulationState.running,
+        symbol: simulationState.symbol,
+        lastPrice: simulationState.lastPrice,
+        pnl: simulationState.pnl,
+        trades: simulationState.trades,
+        position: simulationState.position,
+    };
 });
 
 // App lifecycle

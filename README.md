@@ -2,191 +2,257 @@
 
 **Production-Grade ML Crypto Trading System for Windows 11**
 
-A professional machine learning system for cryptocurrency trading with institutional-grade risk management, walk-forward validation, and regime-aware decision making.
+A professional machine learning system for cryptocurrency trading with institutional-grade risk management, walk-forward validation, regime-aware decision making, and **real-time price simulation**.
 
 ---
 
 ## Quick Start (5 Minutes)
 
-### Prerequisites (Windows 11)
-
-- **Windows 11 x64** (Windows 10 also supported)
-- **Python 3.9, 3.10, or 3.11** (3.11 recommended)
-- **Git** (optional, for cloning)
-- **Node.js 18+** (only for Electron desktop app)
-
-### Step 1: Install Python
-
-1. Download Python from [python.org](https://www.python.org/downloads/)
-2. **IMPORTANT**: Check "Add Python to PATH" during installation
-3. Verify installation:
-   ```powershell
-   python --version
-   # Should show: Python 3.11.x (or 3.9.x/3.10.x)
-   ```
-
-### Step 2: Clone or Download
+### One-Command Install (Windows 11 PowerShell)
 
 ```powershell
-# Option A: Clone with Git
+# Clone repository
 git clone https://github.com/Kerim-Sabic/trade.git
 cd trade
 
-# Option B: Download ZIP and extract, then cd into directory
-```
-
-### Step 3: Install Dependencies
-
-```powershell
-# Upgrade pip
+# Install everything
 python -m pip install --upgrade pip setuptools wheel
-
-# Install PyTorch (CPU-only, fastest)
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-# Install CryptoAI
 pip install -e .
+
+# Verify installation
+python -c "from cryptoai import __version__; print(f'CryptoAI {__version__}')"
 ```
 
-### Step 4: Verify Installation
+### Run Simulation Mode (No API Keys Required!)
 
 ```powershell
-python -c "from cryptoai import __version__; print(f'CryptoAI {__version__} installed successfully')"
+# CLI simulation with real Binance prices
+python -m cryptoai.cli run --mode simulation --asset BTCUSDT
+
+# Or run the desktop app
+cd electron && npm install && npm start
 ```
 
-### Step 5: Run Tests
+---
 
-```powershell
-python -m pytest tests/ -v --timeout=120
-```
+## Features
 
-### Step 6: Run Paper Trading
+### New in This Release
 
-```powershell
-python -m cryptoai.cli run --mode paper --config configs/default.yaml --asset BTCUSDT
-```
+- **Real-Time Price Simulation**: Live Binance/CoinGecko prices without trading
+- **Multi-Exchange Support**: Binance, OKX, and Bybit clients
+- **CVaR Risk Management**: Institutional-grade tail risk controls
+- **Dynamic Drawdown Stops**: Volatility-adjusted position management
+- **Electron Desktop App**: Full simulation mode with real price feeds
+- **Explicit "Do Nothing" Logic**: AI knows when NOT to trade
+
+### Core Features
+
+- Walk-forward backtesting with embargo periods
+- Regime-aware ML models (trending, volatile, crisis detection)
+- Black swan detection (VAE + Isolation Forest)
+- Kill switch with multiple triggers
+- Windows 11 native support (gloo backend for DDP)
 
 ---
 
 ## System Requirements
 
-### Minimum Requirements
-
-| Component | Requirement |
-|-----------|------------|
-| OS | Windows 10/11 x64 |
-| CPU | 4 cores |
-| RAM | 8 GB |
-| Storage | 10 GB SSD |
-| Python | 3.9, 3.10, or 3.11 |
-
-### Recommended Requirements
-
-| Component | Recommendation |
-|-----------|---------------|
-| OS | Windows 11 x64 |
-| CPU | 8+ cores (AMD Ryzen / Intel Core i7+) |
-| RAM | 16-32 GB |
-| Storage | 50+ GB NVMe SSD |
-| GPU | NVIDIA RTX 3060+ (optional, for training) |
-| Python | 3.11 |
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| OS | Windows 10/11 x64 | Windows 11 x64 |
+| CPU | 4 cores | 8+ cores |
+| RAM | 8 GB | 16-32 GB |
+| Storage | 10 GB SSD | 50+ GB NVMe |
+| Python | 3.10+ | 3.11 |
+| GPU | Not required | NVIDIA RTX 3060+ |
 
 ---
 
 ## Installation Options
 
-### Option 1: CPU-Only (Default, Recommended)
-
-Best for inference and paper trading:
+### Option 1: CPU-Only (Default)
 
 ```powershell
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install -e .
 ```
 
-### Option 2: NVIDIA GPU (CUDA) Support
-
-For training and faster inference:
+### Option 2: NVIDIA GPU (CUDA 12.1)
 
 ```powershell
-# Check your CUDA version
-nvidia-smi
-
-# Install PyTorch with CUDA 12.1
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# Or CUDA 11.8
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
 pip install -e .
 ```
 
 ### Option 3: Development Install
 
-For development with all tools:
-
 ```powershell
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install -e ".[dev]"
 ```
 
 ---
 
-## Running the System
+## Running Modes
 
-### CLI Commands
+| Mode | Description | API Keys Required |
+|------|-------------|-------------------|
+| `simulation` | **Real prices, simulated trades** | No |
+| `paper` | Paper trading on testnet | Exchange testnet key |
+| `backtest` | Historical walk-forward testing | No |
+| `shadow` | Live signals, no execution | No |
+| `live` | **DISABLED** - Real trading | Yes (not enabled) |
+
+### Run Simulation (Recommended for Testing)
 
 ```powershell
-# Show help
-python -m cryptoai.cli --help
-
-# Run paper trading
-python -m cryptoai.cli run --mode paper --asset BTCUSDT
-
-# Run backtest
-python -m cryptoai.cli backtest --config configs/default.yaml --start 2024-01-01 --end 2024-06-30
-
-# Train model (requires GPU for reasonable speed)
-python -m cryptoai.cli train --config configs/training.yaml
+# Simulation uses REAL Binance prices but NO actual trading
+python -m cryptoai.cli run --mode simulation --asset BTCUSDT
 ```
 
-### Available Modes
+### Run Backtest
 
-| Mode | Description |
-|------|-------------|
-| `paper` | Simulated trading with live market data |
-| `backtest` | Historical backtesting with walk-forward validation |
-| `shadow` | Live signals without execution (monitoring only) |
-| `live` | **DISABLED** - Real trading (requires additional safeguards) |
+```powershell
+python -m cryptoai.cli backtest --asset BTCUSDT --days 90
+```
+
+### Run Paper Trading
+
+```powershell
+# Requires exchange testnet API key in config
+python -m cryptoai.cli run --mode paper --asset BTCUSDT
+```
 
 ---
 
 ## Electron Desktop App
 
-### Build the Desktop App
+### Quick Start
 
 ```powershell
 cd electron
-
-# Install Node.js dependencies
 npm install
-
-# Run in development mode
 npm start
-
-# Build Windows installer (.exe)
-npm run build:win
 ```
 
-The installer will be in `electron/dist/CryptoAI-Setup-x.x.x.exe`
+### Build Windows Installer (.exe)
+
+```powershell
+cd electron
+npm run build:win
+# Installer at: electron/dist/CryptoAI-Setup-x.x.x.exe
+```
 
 ### Desktop App Features
 
-- Start/Stop trading controls
-- Real-time activity log
-- Configuration management
-- Emergency kill switch (Ctrl+Shift+X)
-- Paper/Backtest mode selection
+- **Simulation Mode**: Real prices from Binance, AI trading signals displayed
+- **Start/Stop Controls**: Easy trading management
+- **Real-Time Log**: See every price update and AI decision
+- **Emergency Kill Switch**: Ctrl+Shift+X instant stop
+- **Asset Selection**: BTC, ETH, SOL, BNB supported
+
+### Simulation Mode in Desktop
+
+1. Select "Simulation (Real Prices)" from Mode dropdown
+2. Choose your asset (BTCUSDT, ETHUSDT, etc.)
+3. Click "Start Trading"
+4. Watch real prices stream with AI signals
+
+**Note**: Simulation mode does NOT place real trades. It fetches real prices and shows what the AI would do.
+
+---
+
+## Price Feed API Configuration
+
+### Default: Binance Public API (No Key Required)
+
+The system uses Binance's public ticker API by default:
+- No API key needed
+- Rate limit: ~1200 requests/minute
+- Data: Price, 24h change, volume, bid/ask
+
+### Optional: CoinGecko API
+
+For alternative data source:
+```yaml
+# In configs/default.yaml
+price_feed:
+  provider: "coingecko"
+  symbols: ["BTCUSDT", "ETHUSDT"]
+```
+
+### Optional: Polygon.io API
+
+For stocks/forex alongside crypto:
+```powershell
+$env:PRICE_FEED_API_KEY="your_polygon_api_key"
+```
+
+---
+
+## Exchange Client Configuration
+
+### Supported Exchanges
+
+| Exchange | Spot | Futures | Testnet |
+|----------|------|---------|---------|
+| Binance | Yes | Yes | Yes |
+| OKX | Yes | Yes | Yes |
+| Bybit | Yes | Yes | Yes |
+
+### Setting Up Exchange Keys (Paper Trading)
+
+Create `.env` file in repository root:
+```bash
+# Binance Testnet
+BINANCE_API_KEY=your_testnet_api_key
+BINANCE_API_SECRET=your_testnet_secret
+
+# OKX (if using)
+OKX_API_KEY=your_okx_key
+OKX_API_SECRET=your_okx_secret
+OKX_PASSPHRASE=your_okx_passphrase
+
+# Bybit (if using)
+BYBIT_API_KEY=your_bybit_key
+BYBIT_API_SECRET=your_bybit_secret
+```
+
+**Important**: Use TESTNET keys only. Live trading is disabled in this release.
+
+---
+
+## Risk Management
+
+### CVaR-Aware Position Sizing
+
+The system uses Conditional Value at Risk (CVaR) for tail-risk aware sizing:
+
+```python
+from cryptoai.risk_engine import create_cvar_position_sizer
+
+sizer = create_cvar_position_sizer(
+    max_position_pct=0.15,  # Max 15% per position
+    target_cvar=0.02,       # Target 2% CVaR
+    min_confidence=0.6      # Min 60% confidence to trade
+)
+```
+
+### Dynamic Drawdown Management
+
+- **Warning Level**: 8% drawdown → Reduce position sizes
+- **Max Level**: 15% drawdown → Close all positions
+- **Daily Limit**: 3% daily loss → Stop trading for the day
+
+### Explicit "Do Nothing" Conditions
+
+The AI will NOT trade when:
+- Confidence < 60% (adjustable)
+- Uncertainty > 30%
+- Black swan probability > 50%
+- Expected return < 0.1% (below transaction costs)
+- Drawdown limit reached
 
 ---
 
@@ -198,68 +264,39 @@ The installer will be in `electron/dist/CryptoAI-Setup-x.x.x.exe`
 python -m pytest tests/ -v --timeout=120
 ```
 
-### Run Specific Test Categories
+### Test Categories
 
 ```powershell
-# Unit tests only
-python -m pytest tests/test_encoders.py tests/test_risk_engine.py -v
+# Price feed tests
+python -m pytest tests/test_price_feed.py -v
 
-# Integration tests
-python -m pytest tests/test_integration.py -v -m integration
+# Risk engine tests (including CVaR)
+python -m pytest tests/test_risk_engine.py -v
 
-# Windows compatibility tests
+# Windows compatibility
 python -m pytest tests/test_windows_compat.py -v
 
-# Backtesting tests
-python -m pytest tests/test_backtesting.py -v
+# Integration tests
+python -m pytest tests/test_integration.py -v
 ```
 
-### Test with Coverage
+### Test Real Price Feed
 
 ```powershell
-pip install pytest-cov
-python -m pytest tests/ --cov=cryptoai --cov-report=html
-# Open htmlcov/index.html in browser
+python -c "
+import asyncio
+from cryptoai.data_universe.price_feed import create_price_feed
+
+async def test():
+    feed = create_price_feed(provider='binance', symbols=['BTCUSDT'])
+    await feed.connect()
+    price = await feed.get_price('BTCUSDT')
+    print(f'BTC: \${price.price:,.2f} ({price.change_24h:+.2f}%)')
+    await feed.disconnect()
+
+asyncio.run(test())
+"
 ```
-
----
-
-## Configuration
-
-### Default Configuration
-
-Configuration files are in `configs/`:
-
-```yaml
-# configs/default.yaml
-model:
-  encoder_type: "unified"
-  state_dim: 256
-  action_dim: 4
-
-training:
-  batch_size: 64
-  learning_rate: 0.0001
-  epochs: 100
-
-risk:
-  max_position_pct: 0.20
-  max_drawdown: 0.15
-  max_daily_loss: 0.05
-
-execution:
-  mode: "paper"
-  slippage_model: "orderbook_depth"
-```
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CRYPTOAI_CONFIG` | Config file path | `configs/default.yaml` |
-| `CRYPTOAI_LOG_LEVEL` | Logging level | `INFO` |
-| `CUDA_VISIBLE_DEVICES` | GPU selection | (all GPUs) |
-| `CRYPTOAI_TEST_MODE` | Enable test mode | `false` |
 
 ---
 
@@ -268,136 +305,70 @@ execution:
 ```
 trade/
 ├── cryptoai/                    # Main Python package
-│   ├── encoders/                # State encoders (transformers, CNNs)
-│   ├── decision_engine/         # Policy networks, reward functions
-│   ├── world_model/             # Predictive models
-│   ├── black_swan/              # Anomaly detection, tail risk
-│   ├── risk_engine/             # Position sizing, kill switch
-│   ├── training/                # DDP training, data loading
-│   ├── backtesting/             # Walk-forward validation
-│   ├── execution/               # Order execution (paper/live)
-│   └── utils/                   # Config, device, logging
-├── electron/                    # Electron desktop app
+│   ├── data_universe/
+│   │   └── price_feed.py        # NEW: Real-time price feeds
+│   ├── execution/
+│   │   └── exchange_client.py   # NEW: Binance, OKX, Bybit
+│   ├── risk_engine/
+│   │   ├── cvar_position_sizer.py  # NEW: CVaR-aware sizing
+│   │   └── ...
+│   └── ...
+├── electron/                    # Desktop app
 │   ├── src/
-│   │   ├── main.js              # Main process
-│   │   ├── preload.js           # IPC bridge
-│   │   ├── index.html           # UI
-│   │   └── renderer.js          # Frontend logic
-│   └── package.json
-├── configs/                     # YAML configurations
-├── tests/                       # Test suite
-├── pyproject.toml               # Python project config
-└── README.md                    # This file
+│   │   ├── main.js              # NEW: Simulation mode
+│   │   └── ...
+├── tests/
+│   └── test_price_feed.py       # NEW: Price feed tests
+├── configs/
+│   └── default.yaml
+└── README.md
 ```
 
 ---
 
-## ML/Trading Architecture
+## CI/CD Pipeline
 
-### Core Components
+GitHub Actions workflow runs on every push:
 
-1. **Unified Market Encoder**: Processes OHLCV, order flow, and regime features
-2. **Regime Detector**: Classifies market conditions (trending, ranging, volatile, crisis)
-3. **Conservative Policy**: Risk-aware action selection with uncertainty estimation
-4. **Black Swan Detector**: Anomaly detection using VAE and isolation forests
-5. **Risk Controller**: Position limits, drawdown monitoring, kill switch
+1. **Python Tests**: Linting, type checking, unit tests
+2. **CVaR Risk Engine Tests**: Drawdown, inaction threshold
+3. **Real Price Feed Test**: Live API integration check
+4. **Electron Build**: Windows installer generation
+5. **Security Scan**: Bandit + Safety checks
 
-### Backtesting Standards
-
-The system implements **professional-grade backtesting** that avoids common pitfalls:
-
-- **Walk-Forward Validation**: Train on past, test on future with embargo periods
-- **Regime-Aware Splits**: Ensures training covers different market conditions
-- **Realistic Execution**: Orderbook-based slippage, latency, partial fills
-- **Monte Carlo Significance**: Statistical validation of results
-- **No Lookahead Bias**: Strict temporal ordering enforced
-
-### Why Naive Backtests Lie
-
-Common backtesting mistakes this system avoids:
-
-1. **Lookahead Bias**: Using future information for past decisions
-2. **Survivorship Bias**: Only testing on assets that still exist
-3. **Regime Ignorance**: Testing only in favorable conditions
-4. **Transaction Cost Fantasy**: Fixed slippage assumptions
-5. **Data Leakage**: Train/test contamination
-6. **Overfitting to Noise**: Too many parameters, no validation
-
-### Risk Management
-
-- Maximum position size: 20% of capital per asset
-- Maximum leverage: 3x
-- Maximum daily loss: 5%
-- Maximum drawdown: 15-20%
-- Automatic position liquidation on kill switch
+See `.github/workflows/windows-ci.yml` for details.
 
 ---
 
-## Common Issues & Solutions
+## Common Issues
 
-### Python Not Found
+### "Cannot connect to price feed"
 
+**Solution**: Check internet connection. The system needs access to:
+- `api.binance.com` (price data)
+- `api.coingecko.com` (alternative)
+
+### "CVaR calculation returns 0"
+
+**Solution**: Need at least 10 return observations:
+```python
+cvar_calc = CVaRCalculator()
+for _ in range(20):
+    cvar_calc.update(random.gauss(0, 0.01))
+metrics = cvar_calc.calculate()  # Now works
 ```
-'python' is not recognized as an internal or external command
-```
 
-**Solution**: Reinstall Python and check "Add Python to PATH", or use full path:
+### "Simulation mode not starting in Electron"
+
+**Solution**: Simulation mode works without Python. Check the Electron console (Ctrl+Shift+I) for errors.
+
+### Tests failing on Windows
+
+**Solution**: Ensure you're using CPU-only PyTorch:
 ```powershell
-C:\Users\YourName\AppData\Local\Programs\Python\Python311\python.exe --version
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
-
-### PyTorch Installation Fails
-
-**Solution**: Install Visual C++ Redistributable:
-- Download from: https://aka.ms/vs/17/release/vc_redist.x64.exe
-
-### Import Error: No module named 'cryptoai'
-
-**Solution**: Run from the repository root and ensure pip install completed:
-```powershell
-cd C:\path\to\trade
-pip install -e .
-```
-
-### CUDA Out of Memory
-
-**Solution**: Reduce batch size or use CPU:
-```yaml
-# In config file
-training:
-  batch_size: 16  # Reduce from 64
-```
-
-Or force CPU:
-```powershell
-$env:CUDA_VISIBLE_DEVICES=""
-python -m cryptoai.cli run ...
-```
-
-### Electron App Won't Start
-
-**Solution**: Check Node.js version and reinstall dependencies:
-```powershell
-node --version  # Should be 18+
-cd electron
-Remove-Item -Recurse -Force node_modules
-npm install
-npm start
-```
-
-### Tests Timeout
-
-**Solution**: Increase timeout or skip slow tests:
-```powershell
-python -m pytest tests/ -v --timeout=300
-# Or skip slow tests
-python -m pytest tests/ -v -m "not slow"
-```
-
-### NCCL Not Available on Windows
-
-This is expected - Windows uses the `gloo` backend instead of `nccl`.
-The system automatically detects Windows and switches to the correct backend.
 
 ---
 
@@ -407,28 +378,36 @@ The system automatically detects Windows and switches to the correct backend.
 
 - Trading cryptocurrencies involves substantial risk of loss
 - Past performance does not guarantee future results
+- Simulation mode shows what the AI **would** do, not guaranteed profits
 - The authors are not responsible for any financial losses
-- Always test thoroughly in paper mode before any real trading
+- Always test thoroughly before any real trading
 - Never invest more than you can afford to lose
 
 ---
 
 ## Known Limitations
 
-1. **Live Trading Disabled**: The `live` mode requires additional API credentials and safeguards not included in this release
-2. **Data Sources**: Synthetic data is used for testing; real data integration requires exchange API setup
-3. **Training Time**: Full model training requires GPU and substantial time (hours to days)
-4. **Windows Only**: While the code is cross-platform compatible, testing and CI are Windows-focused
+1. **Live Trading Disabled**: Requires additional safeguards
+2. **Simulation != Reality**: Real trading has slippage, fees, partial fills
+3. **AI Signals are Indicative**: Not financial advice
+4. **Rate Limits**: Free APIs have request limits
+5. **Windows Focus**: CI/CD optimized for Windows 11
 
 ---
 
-## Contributing
+## Version History
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make changes and add tests
-4. Run tests: `python -m pytest tests/ -v`
-5. Submit a pull request
+### v0.2.0 (Current)
+- Added real-time price feed integration (Binance, CoinGecko)
+- Added OKX and Bybit exchange clients
+- Added CVaR-aware position sizing
+- Added dynamic drawdown management
+- Added simulation mode to Electron app
+- Enhanced CI/CD with price feed tests
+- Improved risk controls with explicit "do nothing" logic
+
+### v0.1.0
+- Initial release with backtesting and paper trading
 
 ---
 

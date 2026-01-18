@@ -3,6 +3,7 @@
  *
  * Secure bridge between main and renderer processes.
  * Uses contextBridge to expose safe APIs.
+ * Includes simulation mode with real price feeds.
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -21,6 +22,30 @@ contextBridge.exposeInMainWorld('cryptoai', {
     // Configuration
     getConfig: () => ipcRenderer.invoke('get-config'),
     setConfig: (config) => ipcRenderer.invoke('set-config', config),
+
+    // Simulation Mode (Real Price Feeds)
+    startSimulation: (config) => ipcRenderer.invoke('start-simulation', config),
+    stopSimulation: () => ipcRenderer.invoke('stop-simulation'),
+    getSimulationStatus: () => ipcRenderer.invoke('get-simulation-status'),
+
+    // Real-time price listeners
+    onPriceUpdate: (callback) => {
+        const subscription = (event, data) => callback(data);
+        ipcRenderer.on('price-update', subscription);
+        return () => ipcRenderer.removeListener('price-update', subscription);
+    },
+
+    onSimulationSignal: (callback) => {
+        const subscription = (event, data) => callback(data);
+        ipcRenderer.on('simulation-signal', subscription);
+        return () => ipcRenderer.removeListener('simulation-signal', subscription);
+    },
+
+    onSimulationPnL: (callback) => {
+        const subscription = (event, data) => callback(data);
+        ipcRenderer.on('simulation-pnl', subscription);
+        return () => ipcRenderer.removeListener('simulation-pnl', subscription);
+    },
 
     // Event listeners
     onTradingLog: (callback) => {

@@ -25,8 +25,11 @@ const dialogConfirm = document.getElementById('dialog-confirm');
 
 // State
 let isTrading = false;
+let isSimulating = false;
 let environmentReady = false;
 let dialogCallback = null;
+let currentPrice = 0;
+let simulationPnL = 0;
 
 /**
  * Initialize the application
@@ -106,16 +109,36 @@ async function checkEnvironment() {
 function setupEventListeners() {
     // Start button
     btnStart.addEventListener('click', async () => {
-        if (!environmentReady) {
-            addLog('error', 'Environment not ready');
-            return;
-        }
-
         const config = {
             asset: assetSelect.value,
             mode: modeSelect.value,
-            configFile: configFile.value
+            configFile: configFile.value,
+            symbol: assetSelect.value
         };
+
+        // Simulation mode doesn't require Python environment
+        if (config.mode === 'simulation') {
+            addLog('info', `Starting SIMULATION with REAL prices: ${config.asset}...`);
+            try {
+                const result = await window.cryptoai.startSimulation(config);
+                if (result.success) {
+                    isSimulating = true;
+                    updateStatusUI('simulation');
+                    addLog('success', 'Simulation started with real Binance price feed');
+                } else {
+                    addLog('error', `Failed to start simulation: ${result.error}`);
+                }
+            } catch (e) {
+                addLog('error', `Error starting simulation: ${e.message}`);
+            }
+            return;
+        }
+
+        // Other modes require Python
+        if (!environmentReady) {
+            addLog('error', 'Environment not ready - Python required for this mode');
+            return;
+        }
 
         addLog('info', `Starting trading: ${config.asset} in ${config.mode} mode...`);
 
@@ -133,6 +156,21 @@ function setupEventListeners() {
 
     // Stop button
     btnStop.addEventListener('click', async () => {
+        if (isSimulating) {
+            addLog('info', 'Stopping simulation...');
+            try {
+                const result = await window.cryptoai.stopSimulation();
+                if (result.success) {
+                    isSimulating = false;
+                    updateStatusUI('stopped');
+                    addLog('success', `Simulation stopped. Final PnL: $${result.finalPnl?.toFixed(2) || 0}`);
+                }
+            } catch (e) {
+                addLog('error', `Error stopping simulation: ${e.message}`);
+            }
+            return;
+        }
+
         addLog('info', 'Stopping trading...');
 
         try {
@@ -242,15 +280,47 @@ function registerIPCListeners() {
 
     // Menu commands
     window.cryptoai.onMenuStartTrading(() => {
-        if (!isTrading && environmentReady) {
+        if (!isTrading && !isSimulating) {
             btnStart.click();
         }
     });
 
     window.cryptoai.onMenuStopTrading(() => {
-        if (isTrading) {
+        if (isTrading || isSimulating) {
             btnStop.click();
         }
+    });
+
+    // Simulation events - Real-time price updates
+    window.cryptoai.onPriceUpdate((data) => {
+        currentPrice = data.price;
+        // Log price updates periodically (not every update to avoid spam)
+        const priceFormatted = data.price.toLocaleString('en-US', {
+            style: 'currency', currency: 'USD', minimumFractionDigits: 2
+        });
+        // Update status text with current price
+        if (isSimulating) {
+            const changeClass = data.change24h >= 0 ? 'positive' : 'negative';
+            statusText.innerHTML = `<span style="color: var(--accent-green);">${data.symbol}: ${priceFormatted}</span> <span class="${changeClass}">(${data.change24h >= 0 ? '+' : ''}${data.change24h.toFixed(2)}%)</span>`;
+        }
+    });
+
+    // Simulation AI signals
+    window.cryptoai.onSimulationSignal((data) => {
+        const signalColors = {
+            'LONG': 'var(--accent-green)',
+            'SHORT': 'var(--accent-red)',
+            'HOLD': 'var(--text-secondary)'
+        };
+        addLog('info', `AI Signal: ${data.signal} (${(data.confidence * 100).toFixed(1)}% confidence) - ${data.reason}`);
+    });
+
+    // Simulation PnL updates
+    window.cryptoai.onSimulationPnL((data) => {
+        simulationPnL = data.total;
+        const pnlFormatted = data.total >= 0 ? `+$${data.total.toFixed(2)}` : `-$${Math.abs(data.total).toFixed(2)}`;
+        const positionText = data.position > 0 ? 'LONG' : data.position < 0 ? 'SHORT' : 'FLAT';
+        // Could update a PnL display element here if we had one
     });
 }
 
@@ -275,25 +345,41 @@ function updateStatusUI(status) {
     switch (status) {
         case 'running':
             isTrading = true;
+            isSimulating = false;
             statusIndicator.classList.add('running');
             statusText.textContent = 'Trading Active';
             btnStart.disabled = true;
             btnStop.disabled = false;
             break;
 
+        case 'simulation':
+            isTrading = false;
+            isSimulating = true;
+            statusIndicator.classList.add('running');
+            statusIndicator.style.backgroundColor = 'var(--accent-yellow, #f59e0b)';
+            statusText.textContent = 'Simulation (Real Prices)';
+            btnStart.disabled = true;
+            btnStop.disabled = false;
+            break;
+
         case 'stopped':
             isTrading = false;
+            isSimulating = false;
             statusIndicator.classList.add('stopped');
+            statusIndicator.style.backgroundColor = '';
             statusText.textContent = 'Stopped';
-            btnStart.disabled = !environmentReady;
+            // In simulation mode, Python environment is not required
+            btnStart.disabled = false;
             btnStop.disabled = true;
             break;
 
         case 'emergency_stopped':
             isTrading = false;
+            isSimulating = false;
             statusIndicator.classList.add('error');
+            statusIndicator.style.backgroundColor = '';
             statusText.textContent = 'Emergency Stopped';
-            btnStart.disabled = !environmentReady;
+            btnStart.disabled = false;
             btnStop.disabled = true;
             break;
 
